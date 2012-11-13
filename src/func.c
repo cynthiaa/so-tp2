@@ -3,20 +3,22 @@
 #include <stdlib.h>
 
 
-#define CVS_SV_DIR "/var/cvs/"
+#define CVS_SV_DIR "~/cvs"
 
-static char* error;
+//static char* error;
 int cvs_create(char *path) 
 {
 	//create folders
-	char *mkdir, *s;
-	s = CVS_SV_DIR;
+
+	char buffer[256];
 	//@TODO check permission to use var folder
-	sprintf(mkdir, "mkdir -p %s \"%s\"", s, path);
-	system(mkdir);
+    printf("Llego %s\n", path);
+	sprintf(buffer, "mkdir -p \"%s/%s\"", CVS_SV_DIR, path);
+	system(buffer);
+    printf("%s\n",buffer);
 	//create hidden config file
-	sprintf(s, "touch %s/.cvs_config", mkdir);
-	system(s);
+	sprintf(buffer, "touch %s/%s/.cvs_config", CVS_SV_DIR, path);
+	system(buffer);
 	//@TODO actually config the config file
 	return 0;
 }

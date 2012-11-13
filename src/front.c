@@ -1,8 +1,9 @@
-    #include <stdio.h>
+#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <unistd.h>
+#include "func.h"
 
 int router(int argc, const char *argv[])
 {
@@ -50,11 +51,19 @@ int router(int argc, const char *argv[])
         if (cvs_diff_file(revision) == -1) {
             /* code */
         }
-    }
+    } else if (strcmp(argv[1], "create") == 0) {
+        char *path = (char *)argv[2];
 
+        if (cvs_create(path) == -1) {
+            printf("Unable to move file\n");
+            return -1;
+        }
+    }
+    return 0;
 }
 
 int main(int argc, const char *argv[])
 {
+    router(argc, argv);
     return 0;
 }
