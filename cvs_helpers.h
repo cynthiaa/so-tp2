@@ -5,13 +5,13 @@
 /**
  * Máxima longitud de un comando de bash
  */
-#define CMD_LENGTH      512
+#define CMD_LENGTH   512
 
 
 /**
  * Máxima longitud de un path
  */
-#define MAX_PATH_LENGTH 512
+#define MAX_PATH_LENGTH  512
 
 
 /**

@@ -6,7 +6,7 @@
  *
  * @warning Tiene que terminar en /
  */
-#define CVS_DIR "/var/cvs/"
+#define CVS_DIR  "/var/cvs/"
 
 
 /**
@@ -95,3 +95,4 @@ int cvs_help(int argc, char **argv);
 
 
 #endif /* _CVS_CORE_H_ */
+

@@ -8,8 +8,15 @@
 #include "cvs.h"
 
 
+#define UNUSED(x) ((void)(x))
+
+
 int cvs_format(int argc, char **argv) {
 
+    UNUSED(argc);
+    UNUSED(argv);
+
+    create_path(CVS_DIR);
     run_bash("cd %s && rm -rf *", CVS_DIR);
     run_bash("cd %s && mkdir info", CVS_DIR);
 
@@ -26,6 +33,9 @@ int cvs_format(int argc, char **argv) {
 
 
 int cvs_checkout(int argc, char **argv) {
+
+    UNUSED(argc);
+    UNUSED(argv);
 
     FILE *file = open_file("r", "%sinfo/current", CVS_DIR);
 
@@ -56,6 +66,9 @@ int cvs_checkout(int argc, char **argv) {
 
 int cvs_add(int argc, char **argv) {
 
+    UNUSED(argc);
+    UNUSED(argv);
+
 
     return 0;
 }
@@ -63,11 +76,17 @@ int cvs_add(int argc, char **argv) {
 
 int cvs_delete(int argc, char **argv) {
 
+    UNUSED(argc);
+    UNUSED(argv);
+
     return 0;
 }
 
 
 int cvs_update(int argc, char **argv) {
+
+    UNUSED(argc);
+    UNUSED(argv);
 
     return 0;
 }
@@ -75,11 +94,17 @@ int cvs_update(int argc, char **argv) {
 
 int cvs_commit(int argc, char **argv) {
 
+    UNUSED(argc);
+    UNUSED(argv);
+
     return 0;
 }
 
 
 int cvs_diff(int argc, char **argv) {
+
+    UNUSED(argc);
+    UNUSED(argv);
 
     return 0;
 }
@@ -87,11 +112,17 @@ int cvs_diff(int argc, char **argv) {
 
 int cvs_version(int argc, char **argv) {
 
+    UNUSED(argc);
+    UNUSED(argv);
+
     return 0;
 }
 
 
 int cvs_revert(int argc, char **argv) {
+
+    UNUSED(argc);
+    UNUSED(argv);
 
     return 0;
 }
@@ -99,11 +130,17 @@ int cvs_revert(int argc, char **argv) {
 
 int cvs_mv(int argc, char **argv) {
 
+    UNUSED(argc);
+    UNUSED(argv);
+
     return 0;
 }
 
 
 int cvs_help(int argc, char **argv) {
+
+    UNUSED(argc);
+    UNUSED(argv);
 
     return 0;
 }
