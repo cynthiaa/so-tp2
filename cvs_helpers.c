@@ -51,6 +51,36 @@ FILE* open_file(char *flags, char *fmt, ...) {
 
     va_end(vl);
 
+    /* expandir name */
+
+    static char tmp_name[FILENAME_MAX];
+
+    tmpnam(tmp_name);
+
+    run_bash("echo \"`eval echo '%s'`\" > %s", name, tmp_name);
+
+    FILE *tmp_file = fopen(tmp_name, "r");
+
+    if (!tmp_file) {
+
+        cvs_error(GENERIC_ERROR);
+    }
+
+    fgets(name, FILENAME_MAX, tmp_file);
+
+    fclose(tmp_file);
+
+    char *pos = strchr(name, '\n');
+
+    if (!pos) {
+
+        cvs_error(GENERIC_ERROR);
+    }
+
+    *pos = 0;
+
+    /* abrir el archivo */
+
     FILE *file = fopen(name, flags);
 
     if (!file) {
