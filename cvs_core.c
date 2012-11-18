@@ -17,7 +17,6 @@ int cvs_format(int argc, char **argv) {
     UNUSED(argv);
 
     create_path(CVS_DIR);
-    run_bash("chmod a+w %s", CVS_DIR);
     run_bash("rm -rf %s*", CVS_DIR);
     run_bash("mkdir %sinfo", CVS_DIR);
 

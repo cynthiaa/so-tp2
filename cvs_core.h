@@ -6,7 +6,7 @@
  *
  * @warning Tiene que terminar en /
  */
-#define CVS_DIR  "/var/cvs/"
+#define CVS_DIR  "~/.cvs/"
 
 
 /**

@@ -16,6 +16,8 @@ void cvs_error(char *fmt, ...) {
     if (fmt)
         vprintf(fmt, vl);
 
+    va_end(vl);
+
     exit(1);
 }
 
@@ -28,6 +30,8 @@ void run_bash(char *fmt, ...) {
     va_start(vl, fmt);
 
     vsprintf(cmd, fmt, vl);
+
+    va_end(vl);
 
     if (system(cmd) == -1) {
 
@@ -44,6 +48,8 @@ FILE* open_file(char *flags, char *fmt, ...) {
     va_start(vl, fmt);
 
     vsprintf(name, fmt, vl);
+
+    va_end(vl);
 
     FILE *file = fopen(name, flags);
 
