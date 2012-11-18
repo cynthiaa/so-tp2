@@ -60,7 +60,7 @@ void create_path(char *path) {
 
     for (char *pos, *last = path + 1; (pos = strchr(last, '/')); last = pos + 1) {
 
-        run_bash("mkdir %.*s", pos - path, path);
+        run_bash("mkdir %.*s", (int)(pos - path), path);
     }
 }
 
