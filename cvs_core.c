@@ -17,8 +17,9 @@ int cvs_format(int argc, char **argv) {
     UNUSED(argv);
 
     create_path(CVS_DIR);
-    run_bash("cd %s && rm -rf *", CVS_DIR);
-    run_bash("cd %s && mkdir info", CVS_DIR);
+    run_bash("chmod a+w %s", CVS_DIR);
+    run_bash("rm -rf %s", CVS_DIR);
+    run_bash("mkdir %sinfo", CVS_DIR);
 
     FILE *file = open_file("w", "%sinfo/0", CVS_DIR);
 
@@ -26,7 +27,7 @@ int cvs_format(int argc, char **argv) {
 
     fclose(file);
 
-    run_bash("ln %sinfo/current %sinfo/0", CVS_DIR, CVS_DIR);
+    run_bash("ln %sinfo/0 %sinfo/current", CVS_DIR, CVS_DIR);
 
     return 0;
 }
