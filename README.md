@@ -29,8 +29,8 @@ nombre_del_archivo última_versión id
 ```
 
 
-Formato de los archivos de información del cliente:
----------------------------------------------------
+Formato de los archivos de información de versión del cliente:
+--------------------------------------------------------------
 
 ```
 número_de_versión
@@ -40,8 +40,17 @@ modificación_1
 modifcación_n
 ```
 
-Estructura de datos en servidor:
---------------------------------
+Las líneas de modificación son de la forma:
+
+```
+nombre_del_archivo operación [opciones]
+```
+
+donde las operaciones son: A, D, M, add, delete y move, respectivamente. Move además, lleva como parámetro el nuevo nombre.
+
+
+Estructura de datos en el servidor:
+-----------------------------------
 
 Por cada archivo hay una carpeta con nombre igual al id del archivo, que contiene la versión del archivo, cada vez que fue modificado, con nombre el número de versión.
 

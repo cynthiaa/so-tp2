@@ -1,7 +1,10 @@
 .DS_Store
 *.out
+*.swn
+*.swo
 *.swp
 *~
 *.tmp
 cvs
 .__*
+.cvs_info

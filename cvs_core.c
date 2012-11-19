@@ -72,11 +72,56 @@ int cvs_checkout(int argc, char **argv) {
 }
 
 
+#define append(str, name, member_ptr) \
+    do {\
+        void *aux = realloc(str->name, ++str->num_##name * sizeof(*str->name)); \
+        if (!aux) cvs_error(MEMORY_ERROR); \
+        member_ptr = ((str->name = aux) + str->num_##name - 1); \
+    } while (0)
+
+
 int cvs_add(int argc, char **argv) {
 
-    UNUSED(argc);
-    UNUSED(argv);
+    if (argc != 1) {
 
+        cvs_help(1, (char*[]){"add"});
+        return 1;
+    }
+
+    char info_path[MAX_PATH_LENGTH], file_path[MAX_PATH_LENGTH];
+
+    if (!find_file_in_parents(info_path, ".cvs_info")) {
+
+        cvs_error(NO_REPO_ERROR);
+    }
+
+    expand_path(file_path, argv[0]);
+
+    int offset = strlen(info_path) - strlen(".cvs_info");
+
+    memmove(file_path + offset, file_path, MAX_PATH_LENGTH - offset);
+
+    /* rewrite .cvs_info */
+
+    FILE *file = open_file("r", info_path);
+
+    struct client_file *cf = read_client_file(file);
+
+    fclose(file);
+
+    struct client_modification *mod;
+
+    append(cf, modifications, mod);
+
+    strcpy(mod->name, file_path);
+
+    mod->action = ADD;
+
+    file = open_file("w", info_path);
+
+    write_client_file(file, cf);
+
+    fclose(file);
 
     return 0;
 }

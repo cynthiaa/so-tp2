@@ -1,6 +1,8 @@
 #ifndef _CVS_HELPERS_H_
 #define _CVS_HELPERS_H_
 
+#include <stdbool.h>
+
 
 /**
  * Máxima longitud de un comando de bash
@@ -25,13 +27,32 @@ struct file {
 };
 
 
+enum action {
+
+    ADD    = 'A',
+    DELETE = 'D',
+    MOVE   = 'M',
+};
+
+
 /**
- * Estructura de una línea de modificación
+ * Estructura de una línea de modificación de servidor
  */
-struct modification {
+struct server_modification {
 
     struct file file;
-    enum {ADD = 'A', DELETE = 'D', MOVE = 'M'} action;
+    enum action action;
+    char new_name[MAX_PATH_LENGTH];
+};
+
+
+/**
+ * Estructura de una línea de modificación de servidor
+ */
+struct client_modification {
+
+    char name[MAX_PATH_LENGTH];
+    enum action action;
     char new_name[MAX_PATH_LENGTH];
 };
 
@@ -43,7 +64,7 @@ struct client_file {
 
     int version;
     int num_modifications;
-    struct modification *modifications;
+    struct client_modification *modifications;
 };
 
 
@@ -55,7 +76,7 @@ struct server_file {
     int version;
     int next_file_id;
     int num_modifications;
-    struct modification *modifications;
+    struct server_modification *modifications;
     int num_files;
     struct file *files;
 };
@@ -100,6 +121,17 @@ FILE* open_file(char *flags, char *fmt, ...);
  * @param path  nombre del archivo
  */
 void create_path(char *path);
+
+
+/**
+ * Busca un archivo en el directorio actual o alguno de sus ancestros
+ *
+ * @param path  buffer de salida
+ * @param file  nombre del archivo
+ *
+ * @return true si encontró el archivo, false sino
+ */
+bool find_file_in_parents(char *path, char *file);
 
 
 /**
