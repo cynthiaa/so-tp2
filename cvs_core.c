@@ -4,6 +4,7 @@
 #include <stdarg.h>
 #include "cvs_core.h"
 #include "cvs_helpers.h"
+#include "cvs_files.h"
 #include "cvs_errors.h"
 #include "cvs.h"
 
