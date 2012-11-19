@@ -1,6 +1,8 @@
 #ifndef _CVS_FILES_H_
 #define _CVS_FILES_H_
 
+#include "cvs_helpers.h"
+
 
 /**
  * Estructura de una línea de archivo

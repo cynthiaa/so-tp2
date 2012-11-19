@@ -4,7 +4,6 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include "cvs_files.h"
-#include "cvs_helpers.h"
 #include "cvs_errors.h"
 
 
