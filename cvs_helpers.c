@@ -11,12 +11,11 @@ void cvs_error(char *fmt, ...) {
 
     va_list vl;
 
-    va_start(vl, fmt);
-
-    if (fmt)
+    if (fmt) {
+        va_start(vl, fmt);
         vprintf(fmt, vl);
-
-    va_end(vl);
+        va_end(vl);
+    }
 
     exit(1);
 }
@@ -28,9 +27,7 @@ void run_bash(char *fmt, ...) {
     va_list vl;
 
     va_start(vl, fmt);
-
     vsprintf(cmd, fmt, vl);
-
     va_end(vl);
 
     if (system(cmd) == -1) {
@@ -40,18 +37,9 @@ void run_bash(char *fmt, ...) {
 }
 
 
-FILE* open_file(char *flags, char *fmt, ...) {
-
-    static char name[FILENAME_MAX];
-    va_list vl;
-
-    va_start(vl, fmt);
+static void vexpand_path(char *name, char *fmt, va_list vl) {
 
     vsprintf(name, fmt, vl);
-
-    va_end(vl);
-
-    /* expandir name */
 
     static char tmp_name[FILENAME_MAX];
 
@@ -78,8 +66,29 @@ FILE* open_file(char *flags, char *fmt, ...) {
     }
 
     *pos = 0;
+}
 
-    /* abrir el archivo */
+
+void expand_path(char *name, char *fmt, ...) {
+
+    va_list vl;
+
+    va_start(vl, fmt);
+
+    vexpand_path(name, fmt, vl);
+
+    va_end(vl);
+}
+
+
+FILE* open_file(char *flags, char *fmt, ...) {
+
+    static char name[FILENAME_MAX];
+    va_list vl;
+
+    va_start(vl, fmt);
+    vexpand_path(name, fmt, vl);
+    va_end(vl);
 
     FILE *file = fopen(name, flags);
 
@@ -96,7 +105,7 @@ void create_path(char *path) {
 
     for (char *pos, *last = path + 1; (pos = strchr(last, '/')); last = pos + 1) {
 
-        run_bash("mkdir %.*s", (int)(pos - path), path);
+        run_bash("mkdir \"%.*s\"", (int)(pos - path), path);
     }
 }
 

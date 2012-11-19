@@ -78,6 +78,15 @@ void run_bash(char *fmt, ...);
 
 
 /**
+ * Expande con bash un path dado
+ *
+ * @param name  buffer de salida
+ * @param fmt   mismos parámetros que el printf
+ */
+void expand_path(char *name, char *fmt, ...);
+
+
+/**
  * Abre un archivo
  *
  * @param fmt  mismos parámetros que el printf

@@ -16,17 +16,21 @@ int cvs_format(int argc, char **argv) {
     UNUSED(argc);
     UNUSED(argv);
 
-    create_path(CVS_DIR);
-    run_bash("rm -rf %s*", CVS_DIR);
-    run_bash("mkdir %sinfo", CVS_DIR);
+    char base[MAX_PATH_LENGTH];
 
-    FILE *file = open_file("w", "%sinfo/0", CVS_DIR);
+    expand_path(base, CVS_DIR);
+
+    create_path(base);
+    run_bash("rm -rf %s*", base);
+    run_bash("mkdir %sinfo", base);
+
+    FILE *file = open_file("w", "%sinfo/0", base);
 
     write_server_file(file, (struct server_file[]){{0, 0, 0, NULL, 0, NULL}});
 
     fclose(file);
 
-    run_bash("ln %sinfo/0 %sinfo/current", CVS_DIR, CVS_DIR);
+    run_bash("ln %sinfo/0 %sinfo/current", base, base);
 
     return 0;
 }
@@ -37,7 +41,11 @@ int cvs_checkout(int argc, char **argv) {
     UNUSED(argc);
     UNUSED(argv);
 
-    FILE *file = open_file("r", "%sinfo/current", CVS_DIR);
+    char base[MAX_PATH_LENGTH];
+
+    expand_path(base, CVS_DIR);
+
+    FILE *file = open_file("r", "%sinfo/current", base);
 
     struct server_file *server_file = read_server_file(file);
 
@@ -49,7 +57,7 @@ int cvs_checkout(int argc, char **argv) {
 
         create_path(f->name);
 
-        run_bash("cp %s%d/%d %s", CVS_DIR, f->id, f->version, f->name);
+        run_bash("cp %s%d/%d \"%s\"", base, f->id, f->version, f->name);
     }
 
     file = open_file("w", ".cvs_info");
