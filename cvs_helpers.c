@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
 #include "cvs_helpers.h"
@@ -20,9 +19,22 @@ void cvs_error(char *fmt, ...) {
 }
 
 
+void* cvs_malloc(size_t size) {
+
+    void *tmp = malloc(size);
+
+    if (!tmp) {
+
+        cvs_error(MEMORY_ERROR);
+    }
+
+    return tmp;
+}
+
+
 void run_bash(char *fmt, ...) {
 
-    static char cmd[CMD_LENGTH];
+    static char cmd[MAX_PATH_LENGTH];
     va_list vl;
 
     va_start(vl, fmt);
@@ -50,7 +62,7 @@ static void vexpand_path(char *name, char *fmt, va_list vl) {
 
     if (!tmp_file) {
 
-        cvs_error(GENERIC_ERROR);
+        cvs_error(COMMAND_ERROR);
     }
 
     fgets(name, FILENAME_MAX, tmp_file);
@@ -61,7 +73,7 @@ static void vexpand_path(char *name, char *fmt, va_list vl) {
 
     if (!pos) {
 
-        cvs_error(GENERIC_ERROR);
+        cvs_error(INVALID_PATH_ERROR, name);
     }
 
     *pos = 0;
@@ -73,9 +85,7 @@ void expand_path(char *name, char *fmt, ...) {
     va_list vl;
 
     va_start(vl, fmt);
-
     vexpand_path(name, fmt, vl);
-
     va_end(vl);
 }
 
@@ -100,7 +110,14 @@ FILE* open_file(char *flags, char *fmt, ...) {
 }
 
 
-void create_path(char *path) {
+void create_path(char *fmt, ...) {
+
+    static char path[FILENAME_MAX];
+    va_list vl;
+
+    va_start(vl, fmt);
+    vsprintf(path, fmt, vl);
+    va_end(vl);
 
     for (char *pos, *last = path + 1; (pos = strchr(last, '/')); last = pos + 1) {
 
@@ -111,10 +128,38 @@ void create_path(char *path) {
 
 bool find_file_in_parents(char *path, char *file) {
 
+    char tmp[MAX_PATH_LENGTH], *old, *new = tmp;
+
     expand_path(path, file);
 
-    /* TODO */
+    while (!file_exists(path) && strchr(path + strspn(path, "/"), '/')){
 
-    return true;
+        strcpy(old = new, "../");
+        strcpy(new += strlen("../"), file);
+        expand_path(path, tmp);
+    }
+
+    return file_exists(path);
+}
+
+
+bool file_exists(char *fmt, ...) {
+
+    static char path[MAX_PATH_LENGTH];
+    va_list vl;
+
+    va_start(vl, fmt);
+    vexpand_path(path, fmt, vl);
+    va_end(vl);
+
+    FILE *file = fopen(path, "r");
+
+    if (file) {
+
+        fclose(file);
+        return true;
+    }
+
+    return false;
 }
 

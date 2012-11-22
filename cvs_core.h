@@ -1,13 +1,6 @@
 #ifndef _CVS_CORE_H_
 #define _CVS_CORE_H_
 
-/**
- * Directorio del servidor
- *
- * @warning Tiene que terminar en /
- */
-#define CVS_DIR  "~/.cvs/"
-
 
 /**
  * Formatea el servidor

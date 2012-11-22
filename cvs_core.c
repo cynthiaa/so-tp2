@@ -20,18 +20,12 @@ int cvs_format(int argc, char **argv) {
     char base[MAX_PATH_LENGTH];
 
     expand_path(base, CVS_DIR);
+    create_path("%s/", base);
 
-    create_path(base);
-    run_bash("rm -rf %s*", base);
-    run_bash("mkdir %sinfo", base);
+    run_bash("rm -rf %s/*", base);
+    run_bash("mkdir %s/info", base);
 
-    FILE *file = open_file("w", "%sinfo/0", base);
-
-    write_server_file(file, (struct server_file[]){{0, 0, 0, NULL, 0, NULL}});
-
-    fclose(file);
-
-    run_bash("ln %sinfo/0 %sinfo/current", base, base);
+    write_server_file((struct server_file[]){{0, 0, 0, NULL, 0, NULL}});
 
     return 0;
 }
@@ -44,13 +38,14 @@ int cvs_checkout(int argc, char **argv) {
 
     char base[MAX_PATH_LENGTH];
 
+    if (find_file_in_parents(base, CVS_FILE)) {
+
+        cvs_error(ALREADY_REPO_ERROR);
+    }
+
     expand_path(base, CVS_DIR);
 
-    FILE *file = open_file("r", "%sinfo/current", base);
-
-    struct server_file *server_file = read_server_file(file);
-
-    fclose(file);
+    struct server_file *server_file = read_server_file(-1);
 
     for (int i = 0; i < server_file->num_files; i++) {
 
@@ -58,14 +53,12 @@ int cvs_checkout(int argc, char **argv) {
 
         create_path(f->name);
 
-        run_bash("cp %s%d/%d \"%s\"", base, f->id, f->version, f->name);
+        run_bash("cp %s/%d/%d \"%s\"", base, f->id, f->version, f->name);
     }
 
-    file = open_file("w", ".cvs_info");
+    run_bash("touch %s", CVS_FILE);
 
-    write_client_file(file, (struct client_file[]){{server_file->version, 0, NULL}});
-
-    fclose(file);
+    write_client_file((struct client_file[]){{server_file->version, 0, NULL}});
 
     free_server_file(server_file);
 
@@ -104,11 +97,7 @@ int cvs_add(int argc, char **argv) {
 
     /* rewrite .cvs_info */
 
-    FILE *file = open_file("r", info_path);
-
-    struct client_file *cf = read_client_file(file);
-
-    fclose(file);
+    struct client_file *cf = read_client_file();
 
     struct client_modification *mod;
 
@@ -118,11 +107,7 @@ int cvs_add(int argc, char **argv) {
 
     mod->action = ADD;
 
-    file = open_file("w", info_path);
-
-    write_client_file(file, cf);
-
-    fclose(file);
+    write_client_file(cf);
 
     return 0;
 }

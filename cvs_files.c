@@ -19,6 +19,7 @@ static int read_number_line(FILE *file) {
     return n;
 }
 
+
 static void write_number_line(FILE *file, int n) {
 
     if (fprintf(file, "%d\n", n) <= 0) {
@@ -195,35 +196,45 @@ static void write_file_line(FILE *file, struct file *f) {
 }
 
 
-struct client_file* read_client_file(FILE *file) {
+struct client_file* read_client_file(void) {
 
-    struct client_file *ret = malloc(sizeof(struct client_file));
+    char path[MAX_PATH_LENGTH];
 
-    if (!ret) {
+    if (!find_file_in_parents(path, CVS_FILE)) {
 
-        cvs_error(MEMORY_ERROR);
+        cvs_error(NO_REPO_ERROR);
     }
+
+    FILE *file = open_file("r", path);
+
+    struct client_file *ret = cvs_malloc(sizeof(struct client_file));
 
     ret->version           = read_number_line(file);
     ret->num_modifications = read_number_line(file);
 
-    ret->modifications = malloc(sizeof(struct client_modification) * ret->num_modifications);
-
-    if (!ret->modifications) {
-
-        cvs_error(MEMORY_ERROR);
-    }
+    ret->modifications = cvs_malloc(sizeof(struct client_modification) * ret->num_modifications);
 
     for (int i = 0; i < ret->num_modifications; i++) {
 
         read_client_modification_line(file, ret->modifications + i);
     }
 
+    fclose(file);
+
     return ret;
 }
 
 
-void write_client_file(FILE *file, struct client_file *client_file) {
+void write_client_file(struct client_file *client_file) {
+
+    char path[MAX_PATH_LENGTH];
+
+    if (!find_file_in_parents(path, CVS_FILE)) {
+
+        cvs_error(NO_REPO_ERROR);
+    }
+
+    FILE *file = open_file("w", path);
 
     write_number_line(file, client_file->version);
     write_number_line(file, client_file->num_modifications);
@@ -232,28 +243,22 @@ void write_client_file(FILE *file, struct client_file *client_file) {
 
         write_client_modification_line(file, client_file->modifications + i);
     }
+
+    fclose(file);
 }
 
 
-struct server_file* read_server_file(FILE *file) {
+struct server_file* read_server_file(int version) {
 
-    struct server_file *ret = malloc(sizeof(struct server_file));
+    FILE *file = open_file("r", version == -1 ? "%sinfo/current" : "%sinfo/%d", CVS_DIR, version );
 
-    if (!ret) {
-
-        cvs_error(MEMORY_ERROR);
-    }
+    struct server_file *ret = cvs_malloc(sizeof(struct server_file));
 
     ret->version           = read_number_line(file);
     ret->next_file_id      = read_number_line(file);
     ret->num_modifications = read_number_line(file);
 
-    ret->modifications = malloc(sizeof(struct server_modification) * ret->num_modifications);
-
-    if (!ret->modifications) {
-
-        cvs_error(MEMORY_ERROR);
-    }
+    ret->modifications = cvs_malloc(sizeof(struct server_modification) * ret->num_modifications);
 
     for (int i = 0; i < ret->num_modifications; i++) {
 
@@ -262,23 +267,28 @@ struct server_file* read_server_file(FILE *file) {
 
     ret->num_files = read_number_line(file);
 
-    ret->files = malloc(sizeof(struct file) * ret->num_files);
-
-    if (!ret->files) {
-
-        cvs_error(MEMORY_ERROR);
-    }
+    ret->files = cvs_malloc(sizeof(struct file) * ret->num_files);
 
     for (int i = 0; i < ret->num_files; i++) {
 
         read_file_line(file, ret->files + i);
     }
 
+    fclose(file);
+
     return ret;
 }
 
 
-void write_server_file(FILE *file, struct server_file *server_file) {
+void write_server_file(struct server_file *server_file) {
+
+    if (file_exists("%sinfo/current", CVS_DIR)) {
+
+        struct server_file* cur = read_server_file(-1);
+        server_file->version = cur->version + 1;
+    }
+
+    FILE *file = open_file("w", "%sinfo/%d", CVS_DIR, server_file->version);
 
     write_number_line(file, server_file->version);
     write_number_line(file, server_file->next_file_id);
@@ -295,6 +305,14 @@ void write_server_file(FILE *file, struct server_file *server_file) {
 
         write_file_line(file, server_file->files + i);
     }
+
+    fclose(file);
+
+    char base[MAX_PATH_LENGTH];
+
+    expand_path(base, CVS_DIR);
+
+    run_bash("ln %s/info/%d %s/info/current", base, server_file->version, base);
 }
 
 

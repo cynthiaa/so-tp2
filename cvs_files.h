@@ -5,6 +5,24 @@
 
 
 /**
+ * Directorio del servidor
+ *
+ * @warning Tiene que terminar en /
+ */
+#ifndef CVS_DIR
+#define CVS_DIR  "~/.cvs/"
+#endif
+
+
+/**
+ * Nombre del archivo de informción de versión del cliente
+ */
+#ifndef CVS_FILE
+#define CVS_FILE  ".cvs_info"
+#endif
+
+
+/**
  * Estructura de una línea de archivo
  */
 struct file {
@@ -15,6 +33,9 @@ struct file {
 };
 
 
+/**
+ * Símbolos de acción en las líneas de modificación
+ */
 enum action {
 
     ADD    = 'A',
@@ -73,35 +94,35 @@ struct server_file {
 /**
  * Lee un archivo de versión del cliente
  *
- * @param file  archivo
+ * @return estructura del archivo
  */
-struct client_file* read_client_file(FILE *file);
+struct client_file* read_client_file(void);
 
 
 /**
  * Escribe un archivo de versión del cliente
  *
- * @param file         archivo
  * @param client_file  estructura del archivo
  */
-void write_client_file(FILE *file, struct client_file *client_file);
+void write_client_file(struct client_file *client_file);
 
 
 /**
  * Lee un archivo de versión del servidor
  *
- * @param file  archivo
+ * @param version  qué versión abrir, si es -1 abre la última
+ *
+ * @return estructura del archivo
  */
-struct server_file* read_server_file(FILE *file);
+struct server_file* read_server_file(int version);
 
 
 /**
  * Escribe un archivo de versión del servidor
  *
- * @param file         archivo
  * @param server_file  estructura del archivo
  */
-void write_server_file(FILE *file, struct server_file *server_file);
+void write_server_file(struct server_file *server_file);
 
 
 /**
