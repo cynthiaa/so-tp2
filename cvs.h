@@ -1,6 +1,7 @@
 #ifndef _CVS_H_
 #define _CVS_H_
 
+#include <stdlib.h>
 #include "cvs_core.h"
 
 
@@ -20,11 +21,26 @@ struct command {
 
 extern const struct command commands[];
 
+extern const size_t num_commands;
+
 
 /**
  * Función de comparación de `commands` para usar con bsearch, etc
  */
 int cmdcmp(const void *name, const void *cmd);
+
+
+/**
+ * Busca un comando
+ *
+ * @param command  nombre del comando a buscar
+ *
+ * @return puntero al comando, o NULL si no fue encontrado
+ */
+static inline struct command* find_command(char *command) {
+
+    return bsearch(command, commands, num_commands, sizeof(struct command), cmdcmp);
+}
 
 
 #endif /* _CVS_H_ */

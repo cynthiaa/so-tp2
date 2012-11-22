@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include "cvs.h"
 #include "cvs_helpers.h"
@@ -30,7 +29,7 @@ const struct command commands[] = {
 };
 
 
-#define NUM_COMMANDS  (sizeof(commands) / sizeof(commands[0]))
+const size_t num_commands = (sizeof(commands) / sizeof(commands[0]));
 
 
 int cmdcmp(const void *name, const void *cmd) {
@@ -43,7 +42,7 @@ static void usage(void) {
 
     printf("Usage:\n\tcvs command [options]\nAvailable options:\n");
 
-    for (size_t i = 0; i < NUM_COMMANDS; i++) {
+    for (size_t i = 0; i < num_commands; i++) {
 
         printf("\t%s\n", commands[i].name);
     }
@@ -57,11 +56,11 @@ int main(int argc, char **argv) {
     if (argc < 2)
         usage();
 
-    struct command *cmd = bsearch(argv[1], commands, NUM_COMMANDS, sizeof(struct command), cmdcmp);
+    struct command *cmd = find_command(argv[1]);
 
     if (!cmd)
         usage();
 
-    return cmd->handler(argc - 2, argv + 2);
+    return cmd->handler(argc - 1, argv + 1);
 }
 

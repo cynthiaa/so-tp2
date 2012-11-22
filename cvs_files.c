@@ -7,6 +7,18 @@
 #include "cvs_errors.h"
 
 
+int files_cmp(const void *file1, const void *file2) {
+
+    return strcmp(((struct file*)file1)->name, ((struct file*)file2)->name);
+}
+
+
+int modifications_cmp(const void *mod1, const void *mod2) {
+
+    return strcmp(((struct modification*)mod1)->file.name, ((struct modification*)mod2)->file.name);
+}
+
+
 static int read_number_line(FILE *file) {
 
     int n;
@@ -29,7 +41,7 @@ static void write_number_line(FILE *file, int n) {
 }
 
 
-static bool validate_file(struct file *f) {
+static bool validate_file(struct file *f, bool server) {
 
     f->name[MAX_PATH_LENGTH - 1] = 0;
 
@@ -38,19 +50,19 @@ static bool validate_file(struct file *f) {
     if (length == 0 || length == MAX_PATH_LENGTH -1)
         return false;
 
-    if (f->version < 0)
+    if (server && f->version < 0)
         return false;
 
-    if (f->id < 0)
+    if (server && f->id < 0)
         return false;
 
     return true;
 }
 
 
-static bool validate_server_modification(struct server_modification *m) {
+static bool validate_modification(struct modification *m, bool server) {
 
-    if (!validate_file(&m->file))
+    if (!validate_file(&m->file, server))
         return false;
 
     if (!m->action || !strchr("ADM", m->action))
@@ -70,33 +82,8 @@ static bool validate_server_modification(struct server_modification *m) {
 }
 
 
-static bool validate_client_modification(struct client_modification *m) {
 
-    m->name[MAX_PATH_LENGTH - 1] = 0;
-
-    int length = strlen(m->name);
-
-    if (length == 0 || length == MAX_PATH_LENGTH -1)
-        return false;
-
-    if (!m->action || !strchr("ADM", m->action))
-        return false;
-
-    if (m->action == MOVE) {
-
-        m->new_name[MAX_PATH_LENGTH - 1] = 0;
-
-        length = strlen(m->new_name);
-
-        if (length == 0 || length == MAX_PATH_LENGTH -1)
-            return false;
-    }
-
-    return true;
-}
-
-
-static void read_server_modification_line(FILE *file, struct server_modification *m) {
+static void read_server_modification_line(FILE *file, struct modification *m) {
 
     if (fscanf(file, "%s %d %d %c", m->file.name, &m->file.version, &m->file.id, (char*)&m->action) != 4) {
 
@@ -111,16 +98,16 @@ static void read_server_modification_line(FILE *file, struct server_modification
         }
     }
 
-    if (fscanf(file, "\n") != 0 || !validate_server_modification(m)) {
+    if (fscanf(file, "\n") != 0 || !validate_modification(m, true)) {
 
         cvs_error(CORRUPT_REPO_ERROR);
     }
 }
 
 
-static void read_client_modification_line(FILE *file, struct client_modification *m) {
+static void read_client_modification_line(FILE *file, struct modification *m) {
 
-    if (fscanf(file, "%s %c", m->name, (char*)&m->action) != 2) {
+    if (fscanf(file, "%s %c", m->file.name, (char*)&m->action) != 2) {
 
         cvs_error(CORRUPT_REPO_ERROR);
     }
@@ -133,23 +120,32 @@ static void read_client_modification_line(FILE *file, struct client_modification
         }
     }
 
-    if (fscanf(file, "\n") != 0 || !validate_client_modification(m)) {
+    if (fscanf(file, "\n") != 0 || !validate_modification(m, false)) {
 
         cvs_error(CORRUPT_REPO_ERROR);
     }
 }
 
 
-static void read_file_line(FILE *file, struct file *f) {
+static void read_server_file_line(FILE *file, struct file *f) {
 
-    if (fscanf(file, "%s %d %d\n", f->name, &f->version, &f->id) != 3 || !validate_file(f)) {
+    if (fscanf(file, "%s %d %d\n", f->name, &f->version, &f->id) != 3 || !validate_file(f, true)) {
 
         cvs_error(CORRUPT_REPO_ERROR);
     }
 }
 
 
-static void write_server_modification_line(FILE *file, struct server_modification *m) {
+static void read_client_file_line(FILE *file, struct file *f) {
+
+    if (fscanf(file, "%s\n", f->name) != 1 || !validate_file(f, false)) {
+
+        cvs_error(CORRUPT_REPO_ERROR);
+    }
+}
+
+
+static void write_server_modification_line(FILE *file, struct modification *m) {
 
     if (fprintf(file, "%s %d %d %c", m->file.name, m->file.version, m->file.id, m->action) <= 0) {
 
@@ -168,9 +164,9 @@ static void write_server_modification_line(FILE *file, struct server_modificatio
 }
 
 
-static void write_client_modification_line(FILE *file, struct client_modification *m) {
+static void write_client_modification_line(FILE *file, struct modification *m) {
 
-    if (fprintf(file, "%s %c", m->name, m->action) <= 0) {
+    if (fprintf(file, "%s %c", m->file.name, m->action) <= 0) {
 
         cvs_error(WRITE_ERROR);
     }
@@ -187,7 +183,7 @@ static void write_client_modification_line(FILE *file, struct client_modificatio
 }
 
 
-static void write_file_line(FILE *file, struct file *f) {
+static void write_server_file_line(FILE *file, struct file *f) {
 
     if (fprintf(file, "%s %d %d\n", f->name, f->version, f->id) <= 0) {
 
@@ -196,143 +192,88 @@ static void write_file_line(FILE *file, struct file *f) {
 }
 
 
-struct client_file* read_client_file(void) {
+static void write_client_file_line(FILE *file, struct file *f) {
+
+    if (fprintf(file, "%s\n", f->name) <= 0) {
+
+        cvs_error(WRITE_ERROR);
+    }
+}
+
+
+#define ACTOR client
+#include "file_io.def"
+
+
+#define ACTOR server
+#include "file_io.def"
+
+
+struct info_file* read_client_file(void) {
 
     char path[MAX_PATH_LENGTH];
 
     if (!find_file_in_parents(path, CVS_FILE)) {
 
-        cvs_error(NO_REPO_ERROR);
+        cvs_error(REPO_MISSING_ERROR);
     }
 
-    FILE *file = open_file("r", path);
-
-    struct client_file *ret = cvs_malloc(sizeof(struct client_file));
-
-    ret->version           = read_number_line(file);
-    ret->num_modifications = read_number_line(file);
-
-    ret->modifications = cvs_malloc(sizeof(struct client_modification) * ret->num_modifications);
-
-    for (int i = 0; i < ret->num_modifications; i++) {
-
-        read_client_modification_line(file, ret->modifications + i);
-    }
-
-    fclose(file);
-
-    return ret;
+    return __read_client_file(path);
 }
 
 
-void write_client_file(struct client_file *client_file) {
+void write_client_file(struct info_file *info_file) {
 
     char path[MAX_PATH_LENGTH];
 
     if (!find_file_in_parents(path, CVS_FILE)) {
 
-        cvs_error(NO_REPO_ERROR);
+        cvs_error(REPO_MISSING_ERROR);
     }
 
-    FILE *file = open_file("w", path);
-
-    write_number_line(file, client_file->version);
-    write_number_line(file, client_file->num_modifications);
-
-    for (int i = 0; i < client_file->num_modifications; i++) {
-
-        write_client_modification_line(file, client_file->modifications + i);
-    }
-
-    fclose(file);
+    __write_client_file(info_file, path);
 }
 
 
-struct server_file* read_server_file(int version) {
+struct info_file* read_server_file(int version) {
 
-    FILE *file = open_file("r", version == -1 ? "%sinfo/current" : "%sinfo/%d", CVS_DIR, version );
+    char path[MAX_PATH_LENGTH];
 
-    struct server_file *ret = cvs_malloc(sizeof(struct server_file));
+    sprintf(path, version == -1 ? "%sinfo/current" : "%sinfo/%d", CVS_DIR, version);
 
-    ret->version           = read_number_line(file);
-    ret->next_file_id      = read_number_line(file);
-    ret->num_modifications = read_number_line(file);
-
-    ret->modifications = cvs_malloc(sizeof(struct server_modification) * ret->num_modifications);
-
-    for (int i = 0; i < ret->num_modifications; i++) {
-
-        read_server_modification_line(file, ret->modifications + i);
-    }
-
-    ret->num_files = read_number_line(file);
-
-    ret->files = cvs_malloc(sizeof(struct file) * ret->num_files);
-
-    for (int i = 0; i < ret->num_files; i++) {
-
-        read_file_line(file, ret->files + i);
-    }
-
-    fclose(file);
-
-    return ret;
+    return __read_server_file(path);
 }
 
 
-void write_server_file(struct server_file *server_file) {
+void write_server_file(struct info_file *info_file) {
 
     if (file_exists("%sinfo/current", CVS_DIR)) {
 
-        struct server_file* cur = read_server_file(-1);
-        server_file->version = cur->version + 1;
+        struct info_file* cur = read_server_file(-1);
+        info_file->version = cur->version + 1;
     }
 
-    FILE *file = open_file("w", "%sinfo/%d", CVS_DIR, server_file->version);
+    char path[MAX_PATH_LENGTH];
 
-    write_number_line(file, server_file->version);
-    write_number_line(file, server_file->next_file_id);
-    write_number_line(file, server_file->num_modifications);
+    sprintf(path, "%sinfo/%d", CVS_DIR, info_file->version);
 
-    for (int i = 0; i < server_file->num_modifications; i++) {
-
-        write_server_modification_line(file, server_file->modifications + i);
-    }
-
-    write_number_line(file, server_file->num_files);
-
-    for (int i = 0; i < server_file->num_files; i++) {
-
-        write_file_line(file, server_file->files + i);
-    }
-
-    fclose(file);
+    __write_server_file(info_file, path);
 
     char base[MAX_PATH_LENGTH];
 
     expand_path(base, CVS_DIR);
 
-    run_bash("ln %s/info/%d %s/info/current", base, server_file->version, base);
+    run_bash("ln %s/info/%d %s/info/current", base, info_file->version, base);
 }
 
 
-void free_client_file(struct client_file *client_file) {
+void free_info_file(struct info_file *info_file) {
 
-    if (!client_file)
+    if (!info_file)
         return;
 
-    free(client_file->modifications);
-    free(client_file);
-}
-
-
-void free_server_file(struct server_file *server_file){
-
-    if (!server_file)
-        return;
-
-    free(server_file->modifications);
-    free(server_file->files);
-    free(server_file);
+    free(info_file->modifications);
+    free(info_file->files);
+    free(info_file);
 }
 

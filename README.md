@@ -38,6 +38,10 @@ cantidad_de_líneas_de_modificaciones
 modificación_1
 ...
 modifcación_n
+cantidad_de_archivos
+archivo_1
+...
+archivo_n
 ```
 
 Las líneas de modificación son de la forma:
@@ -47,6 +51,12 @@ nombre_del_archivo operación [opciones]
 ```
 
 donde las operaciones son: A, D, M, add, delete y move, respectivamente. Move además, lleva como parámetro el nuevo nombre.
+
+Las líneas de archivo son de la forma:
+
+```
+nombre_del_archivo
+```
 
 
 Estructura de datos en el servidor:

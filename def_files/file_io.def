@@ -1,0 +1,78 @@
+#define __PASTE_(a,b)     a ## b
+#define __PASTE2(a,b)     __PASTE_(a,b)
+#define __PASTE3(a,b,c)   __PASTE2(a,__PASTE2(b,c))
+
+
+#ifndef ACTOR
+#error ACTOR not defined
+#endif
+
+
+static struct info_file* __PASTE3(__read_,ACTOR,_file)(char *path) {
+
+    FILE *file = open_file("r", path);
+
+    struct info_file *ret = cvs_malloc(sizeof(struct info_file));
+
+    ret->version = read_number_line(file);
+
+    if (__PASTE3(read_,ACTOR,_file_line) == read_server_file_line) {
+
+        ret->next_file_id = read_number_line(file);
+    }
+
+    ret->num_modifications = read_number_line(file);
+
+    ret->modifications = cvs_malloc(sizeof(struct modification) * ret->num_modifications);
+
+    for (int i = 0; i < ret->num_modifications; i++) {
+
+        __PASTE3(read_,ACTOR,_modification_line)(file, ret->modifications + i);
+    }
+
+    ret->num_files = read_number_line(file);
+
+    ret->files = cvs_malloc(sizeof(struct file) * ret->num_files);
+
+    for (int i = 0; i < ret->num_files; i++) {
+
+        __PASTE3(read_,ACTOR,_file_line)(file, ret->files + i);
+    }
+
+    fclose(file);
+
+    return ret;
+}
+
+
+static void __PASTE3(__write_,ACTOR,_file)(struct info_file *info_file, char *path) {
+
+    FILE *file = open_file("w", path);
+
+    write_number_line(file, info_file->version);
+
+    if (__PASTE3(write_,ACTOR,_file_line) == write_server_file_line) {
+
+        write_number_line(file, info_file->next_file_id);
+    }
+
+    write_number_line(file, info_file->num_modifications);
+
+    for (int i = 0; i < info_file->num_modifications; i++) {
+
+        __PASTE3(write_,ACTOR,_modification_line)(file, info_file->modifications + i);
+    }
+
+    write_number_line(file, info_file->num_files);
+
+    for (int i = 0; i < info_file->num_files; i++) {
+
+        __PASTE3(write_,ACTOR,_file_line)(file, info_file->files + i);
+    }
+
+    fclose(file);
+}
+
+
+#undef ACTOR
+

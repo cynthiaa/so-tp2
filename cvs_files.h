@@ -23,17 +23,6 @@
 
 
 /**
- * Estructura de una línea de archivo
- */
-struct file {
-
-    char name[MAX_PATH_LENGTH];
-    int version;
-    int id;
-};
-
-
-/**
  * Símbolos de acción en las líneas de modificación
  */
 enum action {
@@ -45,9 +34,20 @@ enum action {
 
 
 /**
- * Estructura de una línea de modificación de servidor
+ * Estructura de una línea de archivo
  */
-struct server_modification {
+struct file {
+
+    char name[MAX_PATH_LENGTH];
+    int version;
+    int id;
+};
+
+
+/**
+ * Estructura de una línea de modificación
+ */
+struct modification {
 
     struct file file;
     enum action action;
@@ -56,36 +56,16 @@ struct server_modification {
 
 
 /**
- * Estructura de una línea de modificación de servidor
+ * Estructura de un archivo de versión
  */
-struct client_modification {
-
-    char name[MAX_PATH_LENGTH];
-    enum action action;
-    char new_name[MAX_PATH_LENGTH];
-};
-
-
-/**
- * Estructura de un archivo de versión de cliente
- */
-struct client_file {
-
-    int version;
-    int num_modifications;
-    struct client_modification *modifications;
-};
-
-
-/**
- * Estructura de un archivo de versión de servidor
- */
-struct server_file {
+struct info_file {
 
     int version;
     int next_file_id;
+
     int num_modifications;
-    struct server_modification *modifications;
+    struct modification *modifications;
+
     int num_files;
     struct file *files;
 };
@@ -96,15 +76,15 @@ struct server_file {
  *
  * @return estructura del archivo
  */
-struct client_file* read_client_file(void);
+struct info_file* read_client_file(void);
 
 
 /**
  * Escribe un archivo de versión del cliente
  *
- * @param client_file  estructura del archivo
+ * @param info_file  estructura del archivo
  */
-void write_client_file(struct client_file *client_file);
+void write_client_file(struct info_file *info_file);
 
 
 /**
@@ -114,31 +94,61 @@ void write_client_file(struct client_file *client_file);
  *
  * @return estructura del archivo
  */
-struct server_file* read_server_file(int version);
+struct info_file* read_server_file(int version);
 
 
 /**
  * Escribe un archivo de versión del servidor
  *
- * @param server_file  estructura del archivo
+ * @param info_file  estructura del archivo
  */
-void write_server_file(struct server_file *server_file);
+void write_server_file(struct info_file *info_file);
 
 
 /**
- * Libera recursos usados por client_file
+ * Libera recursos usados por un info_file
  *
- * @param client_file
+ * @param info_file
  */
-void free_client_file(struct client_file *client_file);
+void free_info_file(struct info_file *info_file);
 
 
 /**
- * Libera recursos usados por server_file
- *
- * @param server_file
+ * Función de comparación de `files` para usar con bsearch, etc
  */
-void free_server_file(struct server_file *server_file);
+int files_cmp(const void *file1, const void *file2);
+
+
+/**
+ * Función de comparación de `modifications` para usar con bsearch, etc
+ */
+int modifications_cmp(const void *mod1, const void *mod2);
+
+
+/**
+ * Busca un `file`
+ *
+ * @param file  struct a buscar
+ *
+ * @return puntero al struct, o NULL si no fue encontrado
+ */
+static inline struct file* find_file(struct info_file *info_file, struct file *file) {
+
+    return bsearch(file, info_file->files, info_file->num_files, sizeof(struct file), files_cmp);
+}
+
+
+/**
+ * Busca una `modification`
+ *
+ * @param modification  struct a buscar
+ *
+ * @return puntero al struct, o NULL si no fue encontrado
+ */
+static inline struct modification* find_modification(struct info_file *info_file, struct modification *mod) {
+
+    return bsearch(mod, info_file->modifications, info_file->num_modifications, sizeof(struct modification), modifications_cmp);
+}
 
 
 #endif /* _CVS_FILES_H_ */

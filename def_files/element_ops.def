@@ -1,0 +1,38 @@
+#define __PASTE_(a,b)     a ## b
+#define __PASTE2(a,b)     __PASTE_(a,b)
+
+
+#ifndef MEMBER
+#error MEMBER not defined
+#endif
+
+
+static void __PASTE2(add_,MEMBER)(struct info_file* file, void *elem) {
+
+    void *aux = realloc(file->MEMBER, ++file->__PASTE2(num_,MEMBER) * sizeof(*file->MEMBER));
+
+    if (!aux) {
+
+        cvs_error(MEMORY_ERROR);
+    }
+
+    file->MEMBER = aux;
+
+    int offset = file->__PASTE2(num_,MEMBER);
+
+    while(--offset && __PASTE2(MEMBER,_cmp)(elem, file->MEMBER + offset - 1) < 0) ;
+
+    memmove(file->MEMBER + offset + 1, file->MEMBER + offset, (file->__PASTE2(num_,MEMBER) - offset - 1) * sizeof(*file->MEMBER));
+
+    memcpy(file->MEMBER + offset, elem, sizeof(*file->MEMBER));
+}
+
+
+static void __PASTE2(remove_,MEMBER)(struct info_file* file, int pos) {
+
+    memmove(file->MEMBER + pos, file->MEMBER + pos + 1, (file->__PASTE2(num_,MEMBER) - pos - 1) * sizeof(*file->MEMBER));
+}
+
+
+#undef MEMBER
+
