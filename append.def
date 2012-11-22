@@ -1,0 +1,34 @@
+#define __PASTE_(a,b)     a ## b
+#define __PASTE2(a,b)     __PASTE_(a,b)
+#define __PASTE3(a,b,c)   __PASTE2(a,__PASTE2(b,c))
+#define __PASTE4(a,b,c,d) __PASTE3(a,b,__PASTE2(c,d))
+
+
+#ifndef STRUCT
+#error STRUCT not defined
+#endif
+
+
+#ifndef MEMBER
+#error MEMBER not defined
+#endif
+
+
+void* __PASTE4(append_,STRUCT,_,MEMBER)(struct STRUCT* file) {
+
+    void *aux = realloc(file->MEMBER, ++file->__PASTE2(num_,MEMBER) * sizeof(*file->MEMBER));
+
+    if (!aux) {
+
+        cvs_error(MEMORY_ERROR);
+    }
+
+    file->MEMBER = aux;
+
+    return file->MEMBER + file->__PASTE2(num_,MEMBER) - 1;
+}
+
+
+#undef STRUCT
+#undef MEMBER
+

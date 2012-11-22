@@ -66,12 +66,19 @@ int cvs_checkout(int argc, char **argv) {
 }
 
 
-#define append(str, name, member_ptr) \
-    do {\
-        void *aux = realloc(str->name, ++str->num_##name * sizeof(*str->name)); \
-        if (!aux) cvs_error(MEMORY_ERROR); \
-        member_ptr = ((str->name = aux) + str->num_##name - 1); \
-    } while (0)
+#define STRUCT client_file
+#define MEMBER modification
+#include "append.def"
+
+
+#define STRUCT server_file
+#define MEMBER files
+#include "append.def"
+
+
+#define STRUCT server_file
+#define MEMBER modification
+#include "append.def"
 
 
 int cvs_add(int argc, char **argv) {
@@ -99,9 +106,7 @@ int cvs_add(int argc, char **argv) {
 
     struct client_file *cf = read_client_file();
 
-    struct client_modification *mod;
-
-    append(cf, modifications, mod);
+    struct client_modification *mod = append_client_file_modification(cf);
 
     strcpy(mod->name, file_path);
 
