@@ -27,7 +27,7 @@ extern const size_t num_commands;
 /**
  * Función de comparación de `commands` para usar con bsearch, etc
  */
-int cmdcmp(const void *name, const void *cmd);
+int command_cmp(const void *name, const void *cmd);
 
 
 /**
@@ -39,7 +39,7 @@ int cmdcmp(const void *name, const void *cmd);
  */
 static inline struct command* find_command(char *command) {
 
-    return bsearch(command, commands, num_commands, sizeof(struct command), cmdcmp);
+    return bsearch(command, commands, num_commands, sizeof(struct command), command_cmp);
 }
 
 

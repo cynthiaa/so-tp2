@@ -65,7 +65,7 @@ static bool validate_modification(struct modification *m, bool server) {
     if (!validate_file(&m->file, server))
         return false;
 
-    if (!m->action || !strchr("ADM", m->action))
+    if (!m->action || !strchr("ADMN", m->action))
         return false;
 
     if (m->action == MOVE) {

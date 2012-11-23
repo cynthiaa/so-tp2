@@ -30,7 +30,7 @@ static void __PASTE2(add_,MEMBER)(struct info_file* file, void *elem) {
 
 static void __PASTE2(remove_,MEMBER)(struct info_file* file, int pos) {
 
-    memmove(file->MEMBER + pos, file->MEMBER + pos + 1, (file->__PASTE2(num_,MEMBER) - pos - 1) * sizeof(*file->MEMBER));
+    memmove(file->MEMBER + pos, file->MEMBER + pos + 1, (--file->__PASTE2(num_,MEMBER) - pos) * sizeof(*file->MEMBER));
 }
 
 

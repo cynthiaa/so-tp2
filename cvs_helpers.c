@@ -48,35 +48,21 @@ void run_bash(char *fmt, ...) {
 }
 
 
-static void vexpand_path(char *name, char *fmt, va_list vl) {
+static void vexpand_path(char *path, char *fmt, va_list vl) {
+
+    char name[FILENAME_MAX];
 
     vsprintf(name, fmt, vl);
 
-    static char tmp_name[FILENAME_MAX];
+    /* replace the initial ~ */
 
-    tmpnam(tmp_name);
+    if (name[0] == '~' && (!name[1] || name[1] == '/')) {
 
-    run_bash("echo \"$(cd $(eval dirname \"%s\"); pwd)/$(basename \"%s\")\" > %s", name, name, tmp_name);
-
-    FILE *tmp_file = fopen(tmp_name, "r");
-
-    if (!tmp_file) {
-
-        cvs_error(COMMAND_ERROR);
+        sprintf(path, "%s%s", getenv("HOME"), name + 1);
+        strcpy(name, path);
     }
 
-    fgets(name, FILENAME_MAX, tmp_file);
-
-    fclose(tmp_file);
-
-    char *pos = strchr(name, '\n');
-
-    if (!pos) {
-
-        cvs_error(INVALID_PATH_ERROR, name);
-    }
-
-    *pos = 0;
+    realpath(name, path);
 }
 
 

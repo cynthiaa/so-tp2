@@ -32,7 +32,7 @@ const struct command commands[] = {
 const size_t num_commands = (sizeof(commands) / sizeof(commands[0]));
 
 
-int cmdcmp(const void *name, const void *cmd) {
+int command_cmp(const void *name, const void *cmd) {
 
     return strcmp(name, ((struct command*)cmd)->name);
 }
@@ -40,7 +40,7 @@ int cmdcmp(const void *name, const void *cmd) {
 
 static void usage(void) {
 
-    printf("Usage:\n\tcvs command [options]\nAvailable options:\n");
+    printf("Usage:\n\tcvs command [options]\n\nAvailable commands:\n");
 
     for (size_t i = 0; i < num_commands; i++) {
 

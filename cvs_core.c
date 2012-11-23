@@ -125,11 +125,13 @@ static struct modification add_client_modification(int argc, char **argv, enum a
 
 int cvs_add(int argc, char **argv) {
 
-    struct modification mod = add_client_modification(argc, argv, ADD);
+    struct modification mod = add_client_modification(argc, argv, ALTER);
 
     struct info_file *info_file = read_client_file();
 
     if (!find_file(info_file, &mod.file)) {
+
+        mod.action = NEW;
 
         add_modifications(info_file, &mod);
         add_files        (info_file, &mod.file);

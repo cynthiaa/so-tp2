@@ -27,9 +27,10 @@
  */
 enum action {
 
-    ADD    = 'A',
+    ALTER  = 'A',
     DELETE = 'D',
     MOVE   = 'M',
+    NEW    = 'N',
 };
 
 
