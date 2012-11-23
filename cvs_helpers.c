@@ -107,7 +107,7 @@ void create_path(char *fmt, ...) {
 
     for (char *pos, *last = path + 1; (pos = strchr(last, '/')); last = pos + 1) {
 
-        run_bash("mkdir \"%.*s\"", (int)(pos - path), path);
+        run_bash("mkdir \"%.*s\" 2> /dev/null", (int)(pos - path), path);
     }
 }
 

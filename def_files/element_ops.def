@@ -34,5 +34,35 @@ static void __PASTE2(remove_,MEMBER)(struct info_file* file, int pos) {
 }
 
 
+static void* __PASTE2(find_,MEMBER)(struct info_file* file, void *elem) {
+
+    return bsearch(elem, file->MEMBER, file->__PASTE2(num_,MEMBER), sizeof(*file->MEMBER), __PASTE2(MEMBER,_cmp));
+}
+
+
+static void* __PASTE2(find_first_,MEMBER)(struct info_file* file, void *elem) {
+
+    char *ret = __PASTE2(find_,MEMBER)(file, elem);
+
+    if (!ret) return NULL;
+
+    while ((ret -= sizeof(*file->MEMBER)) >= (char*)file->MEMBER && !__PASTE2(MEMBER,_cmp)(ret, elem)) ;
+
+    return ret + sizeof(*file->MEMBER);
+}
+
+
+static void* __PASTE2(find_last_,MEMBER)(struct info_file* file, void *elem) {
+
+    char *ret = __PASTE2(find_,MEMBER)(file, elem);
+
+    if (!ret) return NULL;
+
+    while ((ret += sizeof(*file->MEMBER)) < (char*)file->MEMBER + file->__PASTE2(num_,MEMBER) && !__PASTE2(MEMBER,_cmp)(ret, elem)) ;
+
+    return ret - sizeof(*file->MEMBER);
+}
+
+
 #undef MEMBER
 

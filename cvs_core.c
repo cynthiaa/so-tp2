@@ -129,9 +129,17 @@ int cvs_add(int argc, char **argv) {
 
     struct info_file *info_file = read_client_file();
 
-    if (!find_file(info_file, &mod.file)) {
+    if (!find_files(info_file, &mod.file)) {
+
+        struct modification *pos = find_last_modifications(info_file, &mod);
 
         mod.action = NEW;
+
+        if (pos && pos->action == DELETE) {
+
+            mod.action = ALTER;
+            remove_modifications(info_file, info_file->modifications - pos);
+        }
 
         add_modifications(info_file, &mod);
         add_files        (info_file, &mod.file);
@@ -141,7 +149,7 @@ int cvs_add(int argc, char **argv) {
         return 0;
     }
 
-    if (!find_modification(info_file, &mod)) {
+    if (!find_modifications(info_file, &mod)) {
 
         add_modifications(info_file, &mod);
         write_client_file(info_file);
@@ -162,7 +170,7 @@ int cvs_delete(int argc, char **argv) {
 
     struct info_file *info_file = read_client_file();
 
-    struct file *file = find_file(info_file, &mod.file);
+    struct file *file = find_files(info_file, &mod.file);
 
     if (!file) {
 
@@ -171,8 +179,19 @@ int cvs_delete(int argc, char **argv) {
 
     /* run_bash("rm %s", argv[1]); */
 
+    struct modification *pos = find_last_modifications(info_file, &mod);
+
+    if (!pos || pos->action != NEW) {
+
+        add_modifications(info_file, &mod);
+    }
+
+    if (pos && strchr("AN", pos->action)) {
+
+        remove_modifications(info_file, info_file->modifications - pos);
+    }
+
     remove_files     (info_file, file - info_file->files);
-    add_modifications(info_file, &mod);
     write_client_file(info_file);
     free_info_file   (info_file);
 
@@ -186,7 +205,7 @@ int cvs_mv(int argc, char **argv) {
 
     struct info_file *info_file = read_client_file();
 
-    struct file *file = find_file(info_file, &mod.file);
+    struct file *file = find_files(info_file, &mod.file);
 
     if (!file) {
 
@@ -197,7 +216,7 @@ int cvs_mv(int argc, char **argv) {
 
     strcpy(new_file.name, mod.new_name);
 
-    if (find_file(info_file, &new_file)) {
+    if (find_files(info_file, &new_file)) {
 
         cvs_error(DST_EXISTS_ERROR, argv[2]);
     }

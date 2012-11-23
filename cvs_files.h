@@ -73,6 +73,18 @@ struct info_file {
 
 
 /**
+ * Función de comparación de `files` para usar con bsearch, etc
+ */
+int files_cmp(const void *file1, const void *file2);
+
+
+/**
+ * Función de comparación de `modifications` para usar con bsearch, etc
+ */
+int modifications_cmp(const void *mod1, const void *mod2);
+
+
+/**
  * Lee un archivo de versión del cliente
  *
  * @return estructura del archivo
@@ -112,44 +124,6 @@ void write_server_file(struct info_file *info_file);
  * @param info_file
  */
 void free_info_file(struct info_file *info_file);
-
-
-/**
- * Función de comparación de `files` para usar con bsearch, etc
- */
-int files_cmp(const void *file1, const void *file2);
-
-
-/**
- * Función de comparación de `modifications` para usar con bsearch, etc
- */
-int modifications_cmp(const void *mod1, const void *mod2);
-
-
-/**
- * Busca un `file`
- *
- * @param file  struct a buscar
- *
- * @return puntero al struct, o NULL si no fue encontrado
- */
-static inline struct file* find_file(struct info_file *info_file, struct file *file) {
-
-    return bsearch(file, info_file->files, info_file->num_files, sizeof(struct file), files_cmp);
-}
-
-
-/**
- * Busca una `modification`
- *
- * @param modification  struct a buscar
- *
- * @return puntero al struct, o NULL si no fue encontrado
- */
-static inline struct modification* find_modification(struct info_file *info_file, struct modification *mod) {
-
-    return bsearch(mod, info_file->modifications, info_file->num_modifications, sizeof(struct modification), modifications_cmp);
-}
 
 
 #endif /* _CVS_FILES_H_ */
