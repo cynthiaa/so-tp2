@@ -14,6 +14,8 @@ const struct command commands[] = {
                                "Commits the local changes made to the repository\n"},
     {"delete",   cvs_delete,   "Usage:\n\tgit delete file1 [file2 ...]\n"
                                "Sets a file for deletion in the next commit\n"},
+    {"demo",     cvs_demo,     "Usage:\n\tgit demo\n"
+                               "Starts a demo that shows the functions of the program\n"},
     {"diff",     cvs_diff,     "Usage:\n\tgit diff file version\n"
                                "Prints the diff between a file and itself in a previous version\n"},
     {"erased",   cvs_erased,   "Usage:\n\tgit erased [version]\n"

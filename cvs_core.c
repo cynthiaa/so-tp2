@@ -677,3 +677,82 @@ int cvs_help(int argc, char **argv) {
     return 1;
 }
 
+int cvs_demo(int argc, char**argv) {
+
+    UNUSED(argc);
+    UNUSED(argv);
+
+    // FILE* file= open_file("w", "~/salida_demo");
+    
+    // run_bash("chmod  777 ~/salida_demo");
+
+    // fprintf(file,"\n\nDemostración de comandos implementados para el cvs\n");
+    // fprintf(file,"---------------------------------------------------------\n");
+
+    // fprintf(file,"\n\nCreando un nuevo repositorio....\n");
+    
+    // run_bash("./cvs format");
+    // run_bash("./cvs checkout");
+
+    // printf("\nArchivos que se encuentran en el directorio inicialmete:\n\n");
+    
+    // run_bash("find ~/.cvs | sed -e 's;[^/]*/;|-;g;s;--|; |;g' > ~/salida_demo");
+    
+    // fprintf(file,"---------------------------------------------------------\n");
+    
+    // run_bash("touch Archivo1");
+    // run_bash("mkdir Carpeta");
+    // run_bash("./cvs add Archivo1");
+    // run_bash("./cvs add Carpeta");
+
+    // fprintf(file,"Se han agregado el archivo Archivo1 y la carpeta Carpeta al cvs\n");
+    
+    // run_bash("find ~/.cvs | sed -e 's;[^/]*/;|-;g;s;--|; |;g' > ~/salida_demo");
+
+
+    printf("\n\nDemostración de comandos implementados para el cvs\n");
+    printf("---------------------------------------------------------\n");
+
+    printf("\n\nCreando un nuevo repositorio....\n");
+    
+    
+    run_bash("./cvs format");
+    run_bash("./cvs checkout");
+
+    printf("\nArchivos que se encuentran en el directorio inicialmete:\n\n");
+    
+    run_bash("find ~/.cvs | sed -e 's;[^/]*/;|-;g;s;--|; |;g' ");
+    
+    printf("---------------------------------------------------------\n");
+    
+    printf("\nCreando el archivo Archivo1 en la carpeta Repo ......\n");
+
+    
+    run_bash("mkdir Repo");
+    run_bash("touch ./Repo/Archivo1");
+
+    run_bash("./cvs add Repo");
+    run_bash("./cvs add Repo/Archivo1");
+    run_bash("./cvs commit");
+
+
+    printf("\n\n Se han agregado el archivo Archivo1 y la carpeta Repo al cvs\n\n");
+    
+    run_bash("find ./Repo | sed -e 's;[^/]*/;|-;g;s;--|; |;g'");
+
+    printf("\n\n ");
+    // crear nuevo repo
+
+    // mostrar nuevo repo
+
+    // creando nuevos archivos (A, B, C, D, salida demo)
+
+    // mostrando nuevos archivos
+
+    // Estado del repositorio
+    // llamando a 
+
+
+    return 1;
+}
+
