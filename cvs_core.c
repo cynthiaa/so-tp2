@@ -719,7 +719,7 @@ int cvs_demo(int argc, char**argv) {
     run_bash("./cvs format");
     run_bash("./cvs checkout");
 
-    printf("\nArchivos que se encuentran en el directorio inicialmete:\n\n");
+    printf("\nArchivos que se encuentran en el repositorio inicialmete:\n\n");
     
     run_bash("find ~/.cvs | sed -e 's;[^/]*/;|-;g;s;--|; |;g' ");
     
@@ -740,17 +740,21 @@ int cvs_demo(int argc, char**argv) {
     
     run_bash("find ./Repo | sed -e 's;[^/]*/;|-;g;s;--|; |;g'");
 
-    printf("\n\n ");
-    // crear nuevo repo
+    printf("\n\n El repositorio ya tiene su primer versión\n\n");
 
-    // mostrar nuevo repo
+    run_bash("find ~/.cvs | sed -e 's;[^/]*/;|-;g;s;--|; |;g' ");
 
-    // creando nuevos archivos (A, B, C, D, salida demo)
+    run_bash("touch ./Repo/Archivo2");
+    run_bash("./cvs add Repo/Archivo2");
+    run_bash("./cvs commit");
 
-    // mostrando nuevos archivos
+     printf("\n\n Se han agregado el archivo Archivo2 a la carpeta Repo y se ha commiteado\n\n");
+    
+    run_bash("find ./Repo | sed -e 's;[^/]*/;|-;g;s;--|; |;g'");
 
-    // Estado del repositorio
-    // llamando a 
+    printf("\n\n El repositorio ya tiene su segunda versión\n\n");
+
+    run_bash("find ~/.cvs | sed -e 's;[^/]*/;|-;g;s;--|; |;g' ");
 
 
     return 1;
