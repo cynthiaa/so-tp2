@@ -11,7 +11,11 @@
 #define REPO_EXISTS_ERROR   "You already are in a repository.\n"
 #define INVALID_PATH_ERROR  "Invalid path: `%s`\n"
 #define SRC_MISSING_ERROR   "Source path does not exist: `%s`\n"
+#define SRC_CONTROL_ERROR   "Source path is not under version control: `%s`\n"
 #define DST_EXISTS_ERROR    "Destination path already exists: `%s`\n"
+#define DST_NOT_DIR         "Destination must be an existing directory when having multiple sources\n"
+#define MOVE_INSIDE_ERROR   "Destination inside source: rename `%s` to `%s`\n"
+#define CLIENT_BEHIND_ERROR "Your repository is behind the server by %d commits. Update before commiting\n"
 
 
 #endif /* _CVS_ERRORS_H_ */

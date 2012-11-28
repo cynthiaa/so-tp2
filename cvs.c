@@ -6,22 +6,26 @@
 
 const struct command commands[] = {
 
-    {"add",      cvs_add,      "Usage:\n\tgit add file\n"
+    {"add",      cvs_add,      "Usage:\n\tgit add file1 [file2 ...]\n"
                                "Sets a file for adding in the next commit\n"},
     {"checkout", cvs_checkout, "Usage:\n\tgit checkout\n"
                                "Creates a local copy of the last version of the repository\n"},
     {"commit",   cvs_commit,   "Usage:\n\tgit commit\n"
                                "Commits the local changes made to the repository\n"},
-    {"delete",   cvs_delete,   "Usage:\n\tgit delete file\n"
+    {"delete",   cvs_delete,   "Usage:\n\tgit delete file1 [file2 ...]\n"
                                "Sets a file for deletion in the next commit\n"},
     {"diff",     cvs_diff,     "Usage:\n\tgit diff file version\n"
                                "Prints the diff between a file and itself in a previous version\n"},
+    {"erased",   cvs_erased,   "Usage:\n\tgit erased [version]\n"
+                               "Prints a list of the files erased since a given version (defaults to 0)\n"},
     {"format",   cvs_format,   "Usage:\n\tgit format\n"
                                "Formats the server\n"},
     {"help",     cvs_help,     "Usage:\n\tgit help [command]\n"
                                "Show command help\n"},
-    {"mv",       cvs_mv,       "Usage:\n\tgit mv old_path new_path\n"
-                               "Moves a path to a new path\n"},
+    {"mv",       cvs_mv,       "Usage:\n\tgit mv source target\n"
+                               "\tgit mv source1 [source2 ...] directory\n"
+                               "In its first form, it renames a source to a new path and, in "
+                               "its second form, it moves each source to a destination folder\n"},
     {"revert",   cvs_revert,   "Usage:\n\tgit revert file version\n"
                                "Reverts a file to a previous version\n"},
     {"version",  cvs_version,  "Usage:\n\tgit version file\n"

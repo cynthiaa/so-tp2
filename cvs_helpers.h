@@ -87,5 +87,25 @@ bool find_file_in_parents(char *path, char *file);
 bool file_exists(char *fmt, ...);
 
 
+/**
+ * Chequea si un path dado pertenece a un directorio
+ *
+ * @param file  nombre del archivo
+ *
+ * @return true si el path es un directorio existente, false sino
+ */
+bool is_directory(char *file);
+
+
+/**
+ * Extraer el nombre del archivo/carpeta de un path
+ *
+ * @param path  path del archivo/carpeta
+ *
+ * @return nombre del archivo/carpeta
+ */
+char* file_name(char *path);
+
+
 #endif /* _CVS_HELPERS_H_ */
 

@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
+#include <unistd.h>
+#include <sys/stat.h>
 #include "cvs_helpers.h"
 #include "cvs_errors.h"
 
@@ -50,11 +52,9 @@ void run_bash(char *fmt, ...) {
 
 static void vexpand_path(char *path, char *fmt, va_list vl) {
 
-    char name[FILENAME_MAX];
+    char name[MAX_PATH_LENGTH], tmp[MAX_PATH_LENGTH];
 
     vsprintf(name, fmt, vl);
-
-    /* replace the initial ~ */
 
     if (name[0] == '~' && (!name[1] || name[1] == '/')) {
 
@@ -62,7 +62,30 @@ static void vexpand_path(char *path, char *fmt, va_list vl) {
         strcpy(name, path);
     }
 
+    char *pos = strchr(name + 1, '/');
+
+    for ( ; pos; pos = strchr(pos + 1, '/')) {
+
+        sprintf(tmp, "%.*s", (int)(pos - name), name);
+
+        if (access(tmp, R_OK)) {
+
+            break;
+        }
+    }
+
+    if (!pos) {
+
+        realpath(name, path);
+
+        return;
+    }
+
+    sprintf(tmp, "%.*s", (int)(pos - name), name);
+
     realpath(name, path);
+
+    strcpy(path + strlen(path), pos);
 }
 
 
@@ -78,7 +101,7 @@ void expand_path(char *name, char *fmt, ...) {
 
 FILE* open_file(char *flags, char *fmt, ...) {
 
-    static char name[FILENAME_MAX];
+    static char name[MAX_PATH_LENGTH];
     va_list vl;
 
     va_start(vl, fmt);
@@ -98,7 +121,7 @@ FILE* open_file(char *flags, char *fmt, ...) {
 
 void create_path(char *fmt, ...) {
 
-    static char path[FILENAME_MAX];
+    static char path[MAX_PATH_LENGTH];
     va_list vl;
 
     va_start(vl, fmt);
@@ -138,14 +161,25 @@ bool file_exists(char *fmt, ...) {
     vexpand_path(path, fmt, vl);
     va_end(vl);
 
-    FILE *file = fopen(path, "r");
+    return !access(path, R_OK);
+}
 
-    if (file) {
 
-        fclose(file);
-        return true;
-    }
+bool is_directory(char *file) {
 
-    return false;
+    struct stat buf;
+
+    return !stat(file, &buf) && (buf.st_mode & S_IFDIR);
+}
+
+
+char* file_name(char *path) {
+
+    int pos = strlen(path);
+
+    for ( ; pos >= 0 && path[pos] == '/'; pos--) ;
+    for ( ; pos >= 0 && path[pos] != '/'; pos--) ;
+
+    return path + (pos + 1);
 }
 

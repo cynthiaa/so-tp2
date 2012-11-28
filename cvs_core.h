@@ -15,26 +15,32 @@ int cvs_checkout(int argc, char **argv);
 
 
 /**
- * Marca un archivo para agregar en el próximo commit
+ * Marca archivos o carpetas para agregar en el próximo commit
  *
- * @param file  nombre del archivo
+ * @param file1  nombre del archivo o carpeta
+ * @param file2  ...
+ *               ...
  */
 int cvs_add(int argc, char **argv);
 
 
 /**
- * Marca un archivo para borrar en el próximo commit
+ * Marca archivos o carpetas para borrar en el próximo commit
  *
- * @param file  nombre del archivo
+ * @param file1  nombre del archivo o carpeta
+ * @param file2  ...
+ *               ...
  */
 int cvs_delete(int argc, char **argv);
 
 
 /**
- * Marca un archivo para renombrar en el próximo commit
+ * Marca archivos o carpetas para renombrar en el próximo commit
  *
- * @param old_path  viejo nombre
- * @param new_patg  nuevo nombre
+ * @param old_path1  viejo nombre
+ * @param old_path2  ...
+ *                   ...
+ * @param new_path   nuevo nombre (si hay más de un old_path, debe ser una carpeta)
  */
 int cvs_mv(int argc, char **argv);
 
@@ -52,7 +58,7 @@ int cvs_update(int argc, char **argv);
 
 
 /**
- * Muestra en qué versiones fue modificado el archivo
+ * Muestra en qué versiones fue modificado un archivo
  *
  * @param file  nombre del archivo
  */
@@ -78,13 +84,19 @@ int cvs_revert(int argc, char **argv);
 
 
 /**
+ * Muestra los archivos borrados desde una versión dada
+ *
+ * @param version  número de versión
+ */
+int cvs_erased(int argc, char **argv);
+
+
+/**
  * Imprime ayuda
  *
  * @param comando  nombre del comando [opcional]
  */
 int cvs_help(int argc, char **argv);
-
-/* TODO: Faltaria un comando para ver archivos eliminados */
 
 
 #endif /* _CVS_CORE_H_ */

@@ -73,6 +73,12 @@ struct info_file {
 
 
 /**
+ * Devuelve el path completo de CVS_DIR
+ */
+char * base_path(void);
+
+
+/**
  * Función de comparación de `files` para usar con bsearch, etc
  */
 int files_cmp(const void *file1, const void *file2);

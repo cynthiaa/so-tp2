@@ -1,5 +1,4 @@
-#define __PASTE_(a,b)     a ## b
-#define __PASTE2(a,b)     __PASTE_(a,b)
+#include "def_utils.h"
 
 
 #ifndef MEMBER

@@ -7,6 +7,19 @@
 #include "cvs_errors.h"
 
 
+char* base_path(void) {
+
+    static char base[MAX_PATH_LENGTH] = "";
+
+    if (!base[0]) {
+
+        expand_path(base, CVS_DIR);
+    }
+
+    return base;
+}
+
+
 int files_cmp(const void *file1, const void *file2) {
 
     return strcmp(((struct file*)file1)->name, ((struct file*)file2)->name);
@@ -15,7 +28,14 @@ int files_cmp(const void *file1, const void *file2) {
 
 int modifications_cmp(const void *mod1, const void *mod2) {
 
-    return strcmp(((struct modification*)mod1)->file.name, ((struct modification*)mod2)->file.name);
+    const struct modification *m1 = mod1, *m2 = mod2;
+
+    if (m1->action == MOVE || m2->action == MOVE) {
+
+        return (m2->action == MOVE) - (m1->action == MOVE);
+    }
+
+    return strcmp(m1->file.name, m2->file.name);
 }
 
 
@@ -259,11 +279,8 @@ void write_server_file(struct info_file *info_file) {
 
     __write_server_file(info_file, path);
 
-    char base[MAX_PATH_LENGTH];
-
-    expand_path(base, CVS_DIR);
-
-    run_bash("ln %s/info/%d %s/info/current", base, info_file->version, base);
+    run_bash("rm %s/info/current 2> /dev/null", base_path());
+    run_bash("ln %s/info/%d %s/info/current", base_path(), info_file->version, base_path());
 }
 
 
