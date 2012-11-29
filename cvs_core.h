@@ -46,12 +46,6 @@ int cvs_mv(int argc, char **argv);
 
 
 /**
- * Hace un demo de las funciones del programa
- */
-int cvs_demo(int argc, char **argv);
-
-
-/**
  * Hace un commit del repositorio local al servidor
  */
 int cvs_commit(int argc, char **argv);
