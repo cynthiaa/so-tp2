@@ -79,7 +79,7 @@ int cvs_checkout(int argc, char **argv) {
 }
 
 
-struct cmd_tmp {
+static struct cmd_tmp {
 
     char (*argv)[MAX_PATH_LENGTH];
 
