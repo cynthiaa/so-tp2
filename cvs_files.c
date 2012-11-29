@@ -20,9 +20,35 @@ char* base_path(void) {
 }
 
 
+char* repo_path(void) {
+
+    static char repo[MAX_PATH_LENGTH] = "";
+
+    if (!repo[0]) {
+
+        if (!find_file_in_parents(repo, CVS_FILE)) {
+
+            repo[0] = 0;
+
+            return NULL;
+        }
+
+        file_name(repo)[-1] = 0;
+    }
+
+    return repo;
+}
+
+
 int files_cmp(const void *file1, const void *file2) {
 
     return strcmp(((struct file*)file1)->name, ((struct file*)file2)->name);
+}
+
+
+int sub_files_cmp(const void *name, const void *file) {
+
+    return strncmp(name, ((struct file*)file)->name, strlen(name));
 }
 
 

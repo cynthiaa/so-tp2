@@ -75,13 +75,25 @@ struct info_file {
 /**
  * Devuelve el path completo de CVS_DIR
  */
-char * base_path(void);
+char* base_path(void);
+
+
+/**
+ * Devuelve el path completo del repositorio
+ */
+char* repo_path(void);
 
 
 /**
  * Función de comparación de `files` para usar con bsearch, etc
  */
 int files_cmp(const void *file1, const void *file2);
+
+
+/**
+ * Función de conparación de `files` y `subfiles` (archivos hijos)
+ */
+int sub_files_cmp(const void *name, const void *file);
 
 
 /**

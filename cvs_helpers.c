@@ -3,6 +3,8 @@
 #include <stdarg.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <dirent.h>
 #include "cvs_helpers.h"
 #include "cvs_errors.h"
 
@@ -170,6 +172,27 @@ bool is_directory(char *file) {
     struct stat buf;
 
     return !stat(file, &buf) && (buf.st_mode & S_IFDIR);
+}
+
+
+bool is_empty(char *directory) {
+
+    struct dirent *dp;
+    DIR *dir = opendir(directory);
+
+    while ((dp = readdir(dir))) {
+
+        if (!strcmp(dp->d_name,".") || !strcmp(dp->d_name,"..")) {
+
+            continue;
+        }
+
+        closedir(dir);
+        return false;
+    }
+
+    closedir(dir);
+    return true;
 }
 
 

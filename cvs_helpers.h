@@ -9,7 +9,7 @@
  * Máxima longitud de un path
  */
 #ifndef MAX_PATH_LENGTH
-#define MAX_PATH_LENGTH  512
+#define MAX_PATH_LENGTH  128
 #endif
 
 
@@ -95,6 +95,16 @@ bool file_exists(char *fmt, ...);
  * @return true si el path es un directorio existente, false sino
  */
 bool is_directory(char *file);
+
+
+/**
+ * Chequea si un directorio dado está vacío
+ *
+ * @param directory  nombre del directorio
+ *
+ * @return true si el directorio está vacio, false sino
+ */
+bool is_empty(char *directory);
 
 
 /**

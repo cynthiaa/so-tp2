@@ -38,6 +38,7 @@ int cvs_format(int argc, char **argv) {
     create_path("%s/", base_path());
 
     run_bash("rm -rf %s/*", base_path());
+
     run_bash("mkdir %s/info", base_path());
 
     write_server_file((struct info_file[]){{0, 0, 0, NULL, 0, NULL}});
@@ -50,9 +51,7 @@ int cvs_checkout(int argc, char **argv) {
 
     check_num_args(1, argc, argv);
 
-    char tmp[MAX_PATH_LENGTH];
-
-    if (find_file_in_parents(tmp, CVS_FILE)) {
+    if (repo_path()) {
 
         cvs_error(REPO_EXISTS_ERROR);
     }
@@ -88,7 +87,7 @@ struct cmd_tmp {
 };
 
 
-static struct cmd_tmp expand_arguments(int argc, char **argv, bool move) {
+static struct cmd_tmp expand_arguments(int argc, char **argv) {
 
     if (argc == 1) {
 
@@ -100,19 +99,18 @@ static struct cmd_tmp expand_arguments(int argc, char **argv, bool move) {
 
     ret.argv = cvs_malloc(argc * MAX_PATH_LENGTH);
 
-    if (!find_file_in_parents(ret.argv[0], CVS_FILE)) {
+    if (!repo_path()) {
 
         cvs_error(REPO_MISSING_ERROR);
     }
 
-    ret.path_offset = strlen(ret.argv[0]) - strlen(CVS_FILE);
+    strcpy(ret.argv[0], repo_path());
+
+    ret.path_offset = strlen(ret.argv[0]) + 1;
+
+    strcpy(ret.argv[0] + ret.path_offset - 1, "/");
 
     for (int pos = 1; pos < argc; pos++) {
-
-        if (!file_exists("%s", argv[pos]) && !(move && (pos == argc - 1))) {
-
-            cvs_error(SRC_MISSING_ERROR, argv[pos]);
-        }
 
         expand_path(ret.argv[pos], "%s", argv[pos]);
 
@@ -128,9 +126,7 @@ static struct cmd_tmp expand_arguments(int argc, char **argv, bool move) {
 }
 
 
-static void cvs_add_file(struct info_file* info_file, char *path, char *arg) {
-
-    UNUSED(arg);
+static void cvs_add_file(struct info_file* info_file, char *path) {
 
     struct modification mod;
     mod.action = 0;
@@ -164,25 +160,104 @@ static void cvs_add_file(struct info_file* info_file, char *path, char *arg) {
 }
 
 
-static void cvs_delete_file(struct info_file* info_file, char *path, char *arg) {
+static void cvs_add_folder(struct info_file* info_file, char *path, int path_offset) {
+
+    char file_path[MAX_PATH_LENGTH];
+
+    DIR *dir = opendir(path);
+
+    size_t len = strlen(path);
+    path[len++] = '/';
+
+    for(struct dirent *dp; (dp = readdir(dir)); ) {
+
+        if (!strcmp(dp->d_name,".") || !strcmp(dp->d_name,"..")) {
+
+            continue;
+        }
+
+        strcpy(path + len, dp->d_name);
+
+        if (is_directory(path)) {
+
+            cvs_add_folder(info_file, path, path_offset);
+
+            continue;
+        }
+
+        expand_path(file_path, "%s", path);
+
+        cvs_add_file(info_file, file_path + path_offset);
+    }
+
+    closedir(dir);
+}
+
+
+int cvs_add(int argc, char **argv) {
+
+    struct cmd_tmp args = expand_arguments(argc, argv);
+
+    struct info_file *info_file = read_client_file();
+
+    for (int pos = 1; pos < argc; pos++) {
+
+        if (!file_exists("%s", argv[pos])) {
+
+            cvs_error(SRC_MISSING_ERROR, argv[pos]);
+        }
+
+        if (is_directory(argv[pos])) {
+
+            strcpy(args.argv[pos], argv[pos]);
+
+            cvs_add_folder(info_file, args.argv[pos], args.path_offset);
+
+        } else {
+
+            cvs_add_file(info_file, args.argv[pos]);
+        }
+    }
+
+    write_client_file(info_file);
+    free_info_file(info_file);
+    free(args.argv);
+
+    return 0;
+}
+
+
+static void delete_empty_dirs(char *path, char *cur_path, int cur_path_len, int arg_path_len) {
+
+    for (int pos = strlen(path) - 1; pos > arg_path_len; pos--) {
+
+        if (path[pos] == '/') {
+
+            path[pos] = 0;
+
+            if (pos == cur_path_len && !strcmp(path, cur_path)) break;
+            if (!is_empty(path)) break;
+
+            run_bash("rmdir %s", path);
+        }
+    }
+}
+
+
+static void cvs_delete_file(struct info_file* info_file, struct file *file) {
 
     struct modification mod;
-    strcpy(mod.file.name, path);
     mod.action = DELETE;
-
-    struct file *file = find_files(info_file, &mod.file);
-
-    if (!file) {
-
-        cvs_error(SRC_CONTROL_ERROR, arg);
-    }
+    mod.file = *file;
 
     remove_files(info_file, file - info_file->files);
 
     struct modification *pos = find_last_modifications(info_file, &mod);
-    enum action action = pos ? pos->action : 0;
+    enum action action = 0;
 
     if (pos) {
+
+        action = pos->action;
 
         remove_modifications(info_file, pos - info_file->modifications);
     }
@@ -208,47 +283,82 @@ static void cvs_delete_file(struct info_file* info_file, char *path, char *arg) 
 }
 
 
-#define OPERATION add
-#include "cvs_ops.def"
+int cvs_delete(int argc, char **argv) {
 
+    struct cmd_tmp args = expand_arguments(argc, argv);
 
-#define OPERATION delete
-#include "cvs_ops.def"
+    struct info_file *info_file = read_client_file();
 
+    char path[MAX_PATH_LENGTH], cur_path[MAX_PATH_LENGTH];
 
-void cvs_move_file(struct info_file *info_file, char *path, char *new_path, char *arg, char *new_arg) {
+    expand_path(cur_path, ".");
 
-    if (!strcmp(path, new_path)) {
+    int cur_path_len = strlen(cur_path);
 
-        return;
+    int repo_path_len = strlen(repo_path()) + 1;
+
+    struct file *f;
+
+    for (int i = 1; i < argc; i++) {
+
+        int len = strlen(args.argv[i]);
+
+        while ((f = bsearch(args.argv[i], info_file->files, info_file->num_files, sizeof(struct file), sub_files_cmp))) {
+
+            if (args.argv[i][len - 1] == '/' || f->name[len] == '/' || !f->name[len]) {
+
+                sprintf(path, "%s/%s", repo_path(), f->name);
+
+                cvs_delete_file(info_file, f);
+
+                run_bash("rm %s", path);
+
+                delete_empty_dirs(path, cur_path, cur_path_len, repo_path_len + len);
+            }
+        }
     }
 
-    if (!file_exists(arg)) {
+    write_client_file(info_file);
+    free_info_file(info_file);
+    free(args.argv);
 
-        cvs_error(SRC_MISSING_ERROR, arg);
+    return 0;
+}
+
+
+void cvs_move_file(struct info_file *info_file, struct file *file_pos, char *old_path, char *new_path) {
+
+    int old_path_len = strlen(old_path);
+
+    if (!strncmp(old_path, new_path, old_path_len) && new_path[old_path_len] == '/') {
+
+        cvs_error(MOVE_INSIDE_ERROR, old_path, new_path);
     }
 
-    struct file file, *file_pos;
-    strcpy(file.name, path);
+    if (!strcmp(old_path, new_path)) {
 
-    if (!(file_pos = find_files(info_file, &file))) {
-
-        cvs_error(SRC_CONTROL_ERROR, arg);
+        cvs_error(IDENTICAL_ERROR, old_path);
     }
+
+    if (!file_exists("%s/%s", repo_path(), old_path) && !file_exists("%s/%s", repo_path(), new_path)) {
+
+        cvs_error(SRC_MISSING_ERROR, old_path);
+    }
+
+    remove_files(info_file, file_pos - info_file->files);
 
     struct file new_file;
     strcpy(new_file.name, new_path);
 
     if (find_files(info_file, &new_file)) {
 
-        cvs_error(DST_EXISTS_ERROR, new_arg);
+        cvs_error(DST_EXISTS_ERROR, new_path);
     }
 
-    remove_files(info_file, file_pos - info_file->files);
     add_files(info_file, &new_file);
 
-    struct modification mod, *mod_pos, new_mod;
-    strcpy(mod.file.name, path);
+    struct modification mod, new_mod, *mod_pos;
+    strcpy(mod.file.name, old_path);
     mod.action = 0;
 
     while ((mod_pos = find_first_modifications(info_file, &mod))) {
@@ -268,47 +378,7 @@ void cvs_move_file(struct info_file *info_file, char *path, char *new_path, char
 }
 
 
-void cvs_move_folder(struct info_file *info_file, char *path, char *new_path, int path_offset) {
-
-    char file_path[MAX_PATH_LENGTH], new_file_path[MAX_PATH_LENGTH];
-    struct dirent *dp;
-    DIR *dir = opendir(path);
-
-    size_t new_len = strlen(new_path);
-    size_t len = strlen(path);
-
-    new_path[new_len++] = '/';
-    path[len++] = '/';
-
-    while ((dp = readdir(dir))) {
-
-        if (!strcmp(dp->d_name,".") || !strcmp(dp->d_name,"..")) {
-
-            continue;
-        }
-
-        strcpy(new_path + new_len, dp->d_name);
-        strcpy(path + len, dp->d_name);
-
-        if (is_directory(path)) {
-
-            cvs_move_folder(info_file, path, new_path, path_offset);
-
-            continue;
-        }
-
-        expand_path(file_path, "%s", path);
-        expand_path(new_file_path, "%s", new_path);
-
-        cvs_move_file(info_file, file_path + path_offset, new_file_path + path_offset, path, new_path);
-    }
-
-    closedir(dir);
-}
-
-
 int cvs_mv(int argc, char **argv) {
-
 
     if (argc < 3) {
 
@@ -316,8 +386,6 @@ int cvs_mv(int argc, char **argv) {
         return 1;
     }
 
-    struct cmd_tmp args = expand_arguments(argc, argv, true);
-    struct info_file *info_file = read_client_file();
     bool isdir = is_directory(argv[argc - 1]);
 
     if (!isdir && (argc > 3)) {
@@ -325,40 +393,52 @@ int cvs_mv(int argc, char **argv) {
         cvs_error(DST_NOT_DIR);
     }
 
-    char path[MAX_PATH_LENGTH], new_path[MAX_PATH_LENGTH], *name;
-    struct modification mod;
+    struct cmd_tmp args = expand_arguments(argc, argv);
 
-    for (int pos = 1; pos < argc - 1; pos++) {
+    struct info_file *info_file = read_client_file();
 
-        name = file_name(args.argv[pos]);
+    char old_path[MAX_PATH_LENGTH], new_path[MAX_PATH_LENGTH], cur_path[MAX_PATH_LENGTH];
 
-        sprintf(mod.new_name, isdir ? "%s/%s" : "%s", args.argv[argc - 1], name);
-        sprintf(new_path, isdir ? "%s/%s" : "%s", argv[argc - 1], name);
-        strcpy(mod.file.name, args.argv[pos]);
+    expand_path(cur_path, ".");
 
-        if (!strncmp(mod.file.name, mod.new_name, strlen(mod.file.name))) {
+    int cur_path_len = strlen(cur_path);
 
-            cvs_error(MOVE_INSIDE_ERROR, argv[pos], new_path);
+    int repo_path_len = strlen(repo_path()) + 1;
+
+    struct file *f;
+
+    for (int i = 1; i < argc - 1; i++) {
+
+        int len = strlen(args.argv[i]);
+
+        while ((f = bsearch(args.argv[i], info_file->files, info_file->num_files, sizeof(struct file), sub_files_cmp))) {
+
+            if (args.argv[i][len - 1] == '/' || f->name[len] == '/' || !f->name[len]) {
+
+                sprintf(old_path, "%s/%s", repo_path(), f->name);
+
+                char *start = f->name + len - (f->name[len - 1] == '/');
+
+                if (isdir) {
+
+                    for (start--; start > f->name && *(start - 1) != '/'; start--) ;
+
+                    expand_path(new_path, "%s/%s/%s", repo_path(), args.argv[argc - 1], start);
+
+                } else {
+
+                    expand_path(new_path, "%s/%s%s", repo_path(), args.argv[argc - 1], start);
+                }
+
+                cvs_move_file(info_file, f, old_path + repo_path_len, new_path + repo_path_len);
+
+                create_path("%s", new_path);
+
+                run_bash("mv %s %s", old_path, new_path);
+
+                delete_empty_dirs(old_path, cur_path, cur_path_len, repo_path_len + len);
+            }
         }
-
-        if (is_directory(argv[pos])) {
-
-            strcpy(path, argv[pos]);
-
-            cvs_move_folder(info_file, path, new_path, args.path_offset);
-
-        } else {
-
-            cvs_move_file(info_file, mod.file.name, mod.new_name, argv[pos], new_path);
-        }
-    }
-
-    file_name(args.argv[0])[-1] = 0;
-
-    for (int pos = 1; pos < argc - 1; pos++) {
-
-        run_bash( isdir ? "cd %s && mv %s %s/%s" : "cd %s && mv %s %s", args.argv[0],
-                  args.argv[pos], args.argv[argc - 1], file_name(args.argv[pos]) );
     }
 
     write_client_file(info_file);
@@ -381,7 +461,7 @@ int cvs_commit(int argc, char **argv) {
         cvs_error(CLIENT_BEHIND_ERROR, server_info_file->version - client_info_file->version);
     }
 
-    if (client_info_file->num_modifications == 0) {
+    if (!client_info_file->num_modifications) {
 
         return 0;
     }
@@ -396,11 +476,6 @@ int cvs_commit(int argc, char **argv) {
 
     server_info_file->version++;
     client_info_file->version++;
-
-    char path[MAX_PATH_LENGTH];
-    find_file_in_parents(path, CVS_FILE);
-
-    file_name(path)[-1] = 0;
 
     for ( struct modification *mod = server_info_file->modifications;
           mod < server_info_file->modifications + server_info_file->num_modifications;
@@ -424,7 +499,7 @@ int cvs_commit(int argc, char **argv) {
 
                 file->version = mod->file.version = server_info_file->version;
 
-                run_bash("cp %s/%s %s/%d/%d", path, mod->file.name, base_path(), mod->file.id, mod->file.version);
+                run_bash("cp %s/%s %s/%d/%d", repo_path(), mod->file.name, base_path(), mod->file.id, mod->file.version);
 
                 break;
 
@@ -450,6 +525,7 @@ int cvs_commit(int argc, char **argv) {
                 }
 
                 strcpy(new_file.name, mod->new_name);
+
                 add_files(server_info_file, &new_file);
 
                 break;
@@ -465,7 +541,8 @@ int cvs_commit(int argc, char **argv) {
                 }
 
                 create_path("%s/%d/%d", base_path(), mod->file.id, mod->file.version);
-                run_bash("cp %s/%s %s/%d/%d", path, mod->file.name, base_path(), mod->file.id, mod->file.version);
+
+                run_bash("cp %s/%s %s/%d/%d", repo_path(), mod->file.name, base_path(), mod->file.id, mod->file.version);
 
                 break;
 
