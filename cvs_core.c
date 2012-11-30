@@ -11,15 +11,15 @@
 #include "cvs.h"
 
 
-#define UNUSED(x) ((void)(x))
-
-
 #define MEMBER files
 #include "element_ops.def"
 
 
 #define MEMBER modifications
 #include "element_ops.def"
+
+
+#include "cvs_core_helpers.h"
 
 
 static void check_num_args(int num_args, int argc, char **argv) {
@@ -79,7 +79,7 @@ int cvs_checkout(int argc, char **argv) {
 }
 
 
-static struct cmd_tmp {
+struct cmd_tmp {
 
     char (*argv)[MAX_PATH_LENGTH];
 
@@ -481,7 +481,7 @@ int cvs_commit(int argc, char **argv) {
           mod < server_info_file->modifications + server_info_file->num_modifications;
           mod++ )
     {
-        struct file new_file, *file = find_files(server_info_file, &mod->file);
+        struct file *file = find_files(server_info_file, &mod->file);
 
         if (file) {
 
@@ -492,64 +492,12 @@ int cvs_commit(int argc, char **argv) {
             cvs_error(CORRUPT_REPO_ERROR);
         }
 
+        if (!mod->action || !strchr("ADMN", mod->action)) {
 
-        switch (mod->action) {
-
-            case ALTER:
-
-                file->version = mod->file.version = server_info_file->version;
-
-                run_bash("cp %s/%s %s/%d/%d", repo_path(), mod->file.name, base_path(), mod->file.id, mod->file.version);
-
-                break;
-
-            case DELETE:
-
-                remove_files(server_info_file, file - server_info_file->files);
-
-                break;
-
-            case MOVE:
-
-                if (!file) {
-
-                    mod->file.id = new_file.id = server_info_file->next_file_id++;
-                    mod->file.version = new_file.version = server_info_file->version;
-
-                } else {
-
-                    mod->file.id = new_file.id = file->id;
-                    mod->file.version = new_file.version = file->version;
-
-                    remove_files(server_info_file, file - server_info_file->files);
-                }
-
-                strcpy(new_file.name, mod->new_name);
-
-                add_files(server_info_file, &new_file);
-
-                break;
-
-            case NEW:
-
-                if (!file) {
-
-                    mod->file.id = server_info_file->next_file_id++;
-                    mod->file.version = server_info_file->version;
-
-                    add_files(server_info_file, &mod->file);
-                }
-
-                create_path("%s/%d/%d", base_path(), mod->file.id, mod->file.version);
-
-                run_bash("cp %s/%s %s/%d/%d", repo_path(), mod->file.name, base_path(), mod->file.id, mod->file.version);
-
-                break;
-
-            default:
-
-                cvs_error(CORRUPT_REPO_ERROR);
+            cvs_error(CORRUPT_REPO_ERROR);
         }
+
+        action_helpers[mod->action].move_helper(server_info_file, mod, file);
     }
 
     write_server_file(server_info_file);
@@ -565,7 +513,48 @@ int cvs_update(int argc, char **argv) {
 
     check_num_args(1, argc, argv);
 
-    // TODO
+    run_bash("mkdir %s/.cvs && mv %s/* %s/.cvs/", repo_path(), repo_path(), repo_path());
+
+    struct info_file *server_info_file = read_server_file(-1);
+    struct info_file *client_info_file = read_client_file();
+
+    for (int i = 0; i < server_info_file->num_files; i++) {
+
+        struct file *f = server_info_file->files + i;
+
+        create_path("%s/%s", repo_path(), f->name);
+
+        run_bash("cp %s/%d/%d %s/%s", base_path(), f->id, f->version, repo_path(), f->name);
+    }
+
+    free(client_info_file->files);
+
+    client_info_file->files     = server_info_file->files;
+    client_info_file->num_files = server_info_file->num_files;
+
+    free(server_info_file->files);
+    server_info_file->files = NULL;
+
+    free_info_file(server_info_file);
+
+    for ( struct modification *mod = client_info_file->modifications;
+          mod < client_info_file->modifications + client_info_file->num_modifications;
+          mod++ )
+    {
+        struct file *file = find_files(client_info_file, &mod->file);
+
+        if (!mod->action || !strchr("ADMN", mod->action)) {
+
+            cvs_error(CORRUPT_REPO_ERROR);
+        }
+
+        action_helpers[mod->action].update_helper(client_info_file, mod, file);
+    }
+
+    run_bash("rm -r %s/.cvs", repo_path());
+
+    write_client_file(client_info_file);
+    free_info_file(client_info_file);
 
     return 0;
 }

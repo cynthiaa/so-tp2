@@ -35,8 +35,10 @@ void* cvs_malloc(size_t size);
  * Corre un comando de bash
  *
  * @param fmt  mismos parámetros que el printf
+ *
+ * @return código de salida de la shell
  */
-void run_bash(char *fmt, ...);
+int run_bash(char *fmt, ...);
 
 
 /**

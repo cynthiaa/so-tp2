@@ -17,6 +17,7 @@
 #define MOVE_INSIDE_ERROR   "Destination inside source: rename `%s` to `%s`\n"
 #define CLIENT_BEHIND_ERROR "Your repository is behind the server by %d commits. Update before commiting.\n"
 #define IDENTICAL_ERROR     "The source is identical to the destination: `%s`\n"
+#define TREE_CONFLICT_ERROR "Tree conflict. Aborting. If I were you I would do a clean checkout. Sorry.\n"
 
 
 #endif /* _CVS_ERRORS_H_ */

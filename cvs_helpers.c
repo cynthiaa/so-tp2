@@ -36,7 +36,7 @@ void* cvs_malloc(size_t size) {
 }
 
 
-void run_bash(char *fmt, ...) {
+int run_bash(char *fmt, ...) {
 
     static char cmd[MAX_PATH_LENGTH];
     va_list vl;
@@ -45,10 +45,14 @@ void run_bash(char *fmt, ...) {
     vsprintf(cmd, fmt, vl);
     va_end(vl);
 
-    if (system(cmd) == -1) {
+    int ret = system(cmd);
+
+    if (ret == -1) {
 
         cvs_error(COMMAND_ERROR);
     }
+
+    return ret;
 }
 
 
