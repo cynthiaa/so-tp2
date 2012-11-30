@@ -82,5 +82,6 @@ Detalles:
 
 * El `cvs add`, `cvs delete`, `cvs mv` son recursivos, es decir, aceptan carpetas. El resto de los comandos no lo es.
 
-* La lista de archivos de cada archivo de versión tiene (implícitamente) el árbol de archivos del file system: cada archivo es una hoja, y su path es el camino de la raíz a la hoja (root-to-leaf path)
+* La lista de archivos de cada archivo de versión tiene (implícitamente) el árbol de archivos del file system: cada archivo es una hoja, y su path es el camino de la raíz a la hoja (root-to-leaf path).
 
+* El `cvs update` no soporta "tree conflicts".

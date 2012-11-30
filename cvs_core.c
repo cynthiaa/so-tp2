@@ -326,7 +326,7 @@ int cvs_delete(int argc, char **argv) {
 }
 
 
-void cvs_move_file(struct info_file *info_file, struct file *file_pos, char *old_path, char *new_path) {
+void cvs_mv_file(struct info_file *info_file, struct file *file_pos, char *old_path, char *new_path) {
 
     int old_path_len = strlen(old_path);
 
@@ -430,7 +430,7 @@ int cvs_mv(int argc, char **argv) {
                     expand_path(new_path, "%s/%s%s", repo_path(), args.argv[argc - 1], start);
                 }
 
-                cvs_move_file(info_file, f, old_path + repo_path_len, new_path + repo_path_len);
+                cvs_mv_file(info_file, f, old_path + repo_path_len, new_path + repo_path_len);
 
                 create_path("%s", new_path);
 
@@ -474,8 +474,7 @@ int cvs_commit(int argc, char **argv) {
     client_info_file->modifications = NULL;
     client_info_file->num_modifications = 0;
 
-    server_info_file->version++;
-    client_info_file->version++;
+    client_info_file->version = ++server_info_file->version;
 
     for ( struct modification *mod = server_info_file->modifications;
           mod < server_info_file->modifications + server_info_file->num_modifications;
@@ -497,7 +496,7 @@ int cvs_commit(int argc, char **argv) {
             cvs_error(CORRUPT_REPO_ERROR);
         }
 
-        action_helpers[mod->action].move_helper(server_info_file, mod, file);
+        action_helpers[mod->action].commit_helper(server_info_file, mod, file);
     }
 
     write_server_file(server_info_file);
@@ -531,11 +530,14 @@ int cvs_update(int argc, char **argv) {
 
     client_info_file->files     = server_info_file->files;
     client_info_file->num_files = server_info_file->num_files;
-
-    free(server_info_file->files);
-    server_info_file->files = NULL;
+    client_info_file->version   = server_info_file->version;
+    server_info_file->files     = NULL;
 
     free_info_file(server_info_file);
+
+    char path[MAX_PATH_LENGTH], cur_path[MAX_PATH_LENGTH];
+    expand_path(cur_path, ".");
+    int cur_path_len = strlen(cur_path);
 
     for ( struct modification *mod = client_info_file->modifications;
           mod < client_info_file->modifications + client_info_file->num_modifications;
@@ -549,6 +551,13 @@ int cvs_update(int argc, char **argv) {
         }
 
         action_helpers[mod->action].update_helper(client_info_file, mod, file);
+
+        if (mod->action == MOVE || mod->action == DELETE) {
+
+            expand_path(path, "%s/%s", repo_path(), mod->file.name);
+
+            delete_empty_dirs(path, cur_path, cur_path_len, 0);
+        }
     }
 
     run_bash("rm -r %s/.cvs", repo_path());

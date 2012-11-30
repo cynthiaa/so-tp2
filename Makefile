@@ -5,10 +5,10 @@ CFLAGS = -std=gnu99 -pedantic -Wall -Wextra -Wno-unused-function
 
 all: cvs demo
 
-cvs:
+cvs: cvs_helpers.c cvs_files.c cvs_core.c cvs.c
 	$(CC) $(CFLAGS) -I . -I def_files/ -o cvs cvs_helpers.c cvs_files.c cvs_core.c cvs.c
 
-demo: cvs
+demo: cvs demo.c
 	$(CC) $(CFLAGS) -o demo demo.c
 
 clean:

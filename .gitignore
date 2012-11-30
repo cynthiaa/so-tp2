@@ -6,5 +6,6 @@
 *~
 *.tmp
 cvs
+demo
 .__*
 .cvs_info

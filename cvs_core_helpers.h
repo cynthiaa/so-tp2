@@ -5,7 +5,7 @@
 #define UNUSED(x) ((void)(x))
 
 
-static void cvs_move_alter(struct info_file *info_file, struct modification *mod, struct file *file) {
+static void cvs_commit_alter(struct info_file *info_file, struct modification *mod, struct file *file) {
 
     file->version = mod->file.version = info_file->version;
 
@@ -13,7 +13,7 @@ static void cvs_move_alter(struct info_file *info_file, struct modification *mod
 }
 
 
-static void cvs_move_delete(struct info_file *info_file, struct modification *mod, struct file *file) {
+static void cvs_commit_delete(struct info_file *info_file, struct modification *mod, struct file *file) {
 
     UNUSED(mod);
 
@@ -21,7 +21,7 @@ static void cvs_move_delete(struct info_file *info_file, struct modification *mo
 }
 
 
-static void cvs_move_move(struct info_file *info_file, struct modification *mod, struct file *file) {
+static void cvs_commit_move(struct info_file *info_file, struct modification *mod, struct file *file) {
 
     struct file new_file;
 
@@ -44,7 +44,7 @@ static void cvs_move_move(struct info_file *info_file, struct modification *mod,
 }
 
 
-static void cvs_move_new(struct info_file *info_file, struct modification *mod, struct file *file) {
+static void cvs_commit_new(struct info_file *info_file, struct modification *mod, struct file *file) {
 
     if (!file) {
 
@@ -68,7 +68,7 @@ static void cvs_update_alter(struct info_file *info_file, struct modification *m
 
         add_files(info_file, &mod->file);
 
-        create_path("%s/%s", base_path(), mod->file.name);
+        create_path("%s/%s", repo_path(), mod->file.name);
 
         run_bash("mv %s/.cvs/%s %s/%s", repo_path(), mod->file.name, repo_path(), mod->file.name);
 
@@ -119,6 +119,8 @@ static void cvs_update_move(struct info_file *info_file, struct modification *mo
     if (!(file = find_files(info_file, &new_file))) {
 
         add_files(info_file, &new_file);
+
+        create_path("%s/%s", repo_path(), mod->new_name);
     }
 
     run_bash("mv %s/%s %s/%s", repo_path(), mod->file.name, repo_path(), mod->new_name);
@@ -133,16 +135,16 @@ static void cvs_update_new(struct info_file *info_file, struct modification *mod
 
 static struct {
 
-    void (*move_helper)(struct info_file*, struct modification*, struct file*);
+    void (*commit_helper)(struct info_file*, struct modification*, struct file*);
 
     void (*update_helper)(struct info_file*, struct modification*, struct file*);
 
 } action_helpers[] = {
 
-    ['A'] = {cvs_move_alter,  cvs_update_alter },
-    ['D'] = {cvs_move_delete, cvs_update_delete},
-    ['M'] = {cvs_move_move,   cvs_update_move  },
-    ['N'] = {cvs_move_new,    cvs_update_new   },
+    ['A'] = {cvs_commit_alter,  cvs_update_alter },
+    ['D'] = {cvs_commit_delete, cvs_update_delete},
+    ['M'] = {cvs_commit_move,   cvs_update_move  },
+    ['N'] = {cvs_commit_new,    cvs_update_new   },
 };
 
 

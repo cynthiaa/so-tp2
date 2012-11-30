@@ -30,6 +30,8 @@ const struct command commands[] = {
                                "Sets a file in conflict as resolved\n"},
     {"revert",   cvs_revert,   "Usage:\n\tcvs revert file version\n"
                                "Reverts a file to a previous version\n"},
+    {"update",   cvs_update,   "Usage:\n\tcvs update\n"
+                               "Updates the local repository\n"},
     {"version",  cvs_version,  "Usage:\n\tcvs version file\n"
                                "Shows a list of the previous versions of the file\n"},
 };
