@@ -560,6 +560,21 @@ int cvs_update(int argc, char **argv) {
 }
 
 
+int cvs_resolved(int argc, char **argv) {
+
+    check_num_args(2, argc, argv);
+
+    if (!file_exists("%s.diff")) {
+
+        cvs_error(NO_CONFLICT_ERROR, argv[1]);
+    }
+
+    run_bash("patch -u %s.diff", argv[1]);
+
+    return 0;
+}
+
+
 static struct file* find_file_in_version(struct info_file* info_file, char *name) {
 
     char tmp[MAX_PATH_LENGTH];

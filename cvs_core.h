@@ -58,6 +58,14 @@ int cvs_update(int argc, char **argv);
 
 
 /**
+ * Marca un archivo en conflico, como resuelto
+ *
+ * @param file  nombre del archivo
+ */
+int cvs_resolved(int argc, char **argv);
+
+
+/**
  * Muestra en qué versiones fue modificado un archivo
  *
  * @param file  nombre del archivo

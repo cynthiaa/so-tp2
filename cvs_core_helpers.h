@@ -82,10 +82,10 @@ static void cvs_update_alter(struct info_file *info_file, struct modification *m
         return;
     }
 
-    printf( "Conflict in file `%s/%s`.\nSolve it and run `cvs resolved %s/%s`.\n",
-            repo_path(), mod->file.name, repo_path(), mod->file.name );
+    printf( "Conflict in file `%s/%s`.\nEdit `%s/%s.diff` and run `cvs resolved %s/%s`.\n",
+            repo_path(), mod->file.name, repo_path(), mod->file.name, repo_path(), mod->file.name );
 
-    run_bash( "diff -u %s/%s %s/.cvs/%s > %s/%s", repo_path(), mod->file.name,
+    run_bash( "diff -u %s/%s %s/.cvs/%s > %s/%s.diff", repo_path(), mod->file.name,
               repo_path(), mod->file.name, repo_path(), mod->file.name );
 }
 
